@@ -6,11 +6,11 @@ import { Driver } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
-import { Search, UserX, UserCheck } from 'lucide-react';
+import { Search, ShieldOff, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 export default function DriversPage() {
     const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -18,6 +18,20 @@ export default function DriversPage() {
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
+
+    // Dialog state
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialogConfig, setDialogConfig] = useState<{
+        icon: string;
+        iconColor: string;
+        iconBgColor: string;
+        title: string;
+        message: string;
+        confirmText: string;
+        confirmColor: string;
+        driverId: string;
+        newStatus: 'ACTIVE' | 'SUSPENDED';
+    } | null>(null);
 
     const fetchDrivers = async () => {
         try {
@@ -39,30 +53,62 @@ export default function DriversPage() {
         fetchDrivers();
     }, [page, search]);
 
-    const handleSuspend = async (id: string) => {
-        if (!confirm('Are you sure you want to suspend this driver\'s license?')) return;
-
-        try {
-            await api.put(`/admin/drivers/${id}/suspend`, {
-                reason: 'Suspended by administrator'
-            });
-            toast.success('Driver license suspended successfully');
-            fetchDrivers();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to suspend license');
-        }
+    const openSuspendDialog = (driver: Driver) => {
+        setDialogConfig({
+            icon: '⊘',
+            iconColor: '#ffffff',
+            iconBgColor: '#F44336',
+            title: 'Suspend License',
+            message: `Are you sure you want to suspend the license for ${driver.name}? The driver will be notified by email immediately.`,
+            confirmText: 'Yes, Suspend',
+            confirmColor: '#F44336',
+            driverId: driver._id,
+            newStatus: 'SUSPENDED',
+        });
+        setDialogOpen(true);
     };
 
-    const handleActivate = async (id: string) => {
-        if (!confirm('Are you sure you want to activate this driver\'s license?')) return;
+    const openActivateDialog = (driver: Driver) => {
+        setDialogConfig({
+            icon: '✓',
+            iconColor: '#ffffff',
+            iconBgColor: '#4CAF50',
+            title: 'Activate License',
+            message: `Are you sure you want to activate the license for ${driver.name}? This will restore their driving privileges immediately.`,
+            confirmText: 'Yes, Activate',
+            confirmColor: '#4CAF50',
+            driverId: driver._id,
+            newStatus: 'ACTIVE',
+        });
+        setDialogOpen(true);
+    };
 
-        try {
-            await api.put(`/admin/drivers/${id}/activate`);
-            toast.success('Driver license activated successfully');
-            fetchDrivers();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to activate license');
-        }
+    const handleStatusChange = async () => {
+        if (!dialogConfig) return;
+
+        const { driverId, newStatus } = dialogConfig;
+        const endpoint = newStatus === 'SUSPENDED'
+            ? `/admin/drivers/${driverId}/suspend`
+            : `/admin/drivers/${driverId}/activate`;
+
+        await api.put(endpoint, {
+            reason: newStatus === 'SUSPENDED' ? 'Suspended by administrator' : undefined,
+        });
+
+        // Update locally without full refetch
+        setDrivers((prev) =>
+            prev.map((d) =>
+                d._id === driverId
+                    ? { ...d, licenseStatus: newStatus }
+                    : d
+            )
+        );
+
+        toast.success(
+            newStatus === 'ACTIVE'
+                ? '✓ License Activated — Driver has been notified by email'
+                : '✗ License Suspended — Driver has been notified by email'
+        );
     };
 
     return (
@@ -121,33 +167,52 @@ export default function DriversPage() {
                                             <td className="px-4 py-3 text-sm">{driver.licenseNumber}</td>
                                             <td className="px-4 py-3 text-sm">{driver.nic}</td>
                                             <td className="px-4 py-3 text-sm">{driver.email}</td>
+
+                                            {/* Premium Status Pill */}
                                             <td className="px-4 py-3">
-                                                <Badge variant={driver.licenseStatus === 'ACTIVE' ? 'default' : 'destructive'}>
-                                                    {driver.licenseStatus}
-                                                </Badge>
+                                                {driver.licenseStatus === 'ACTIVE' ? (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                                                        style={{ backgroundColor: '#E8F5E9', color: '#2E7D32' }}>
+                                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2E7D32' }} />
+                                                        Active
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                                                        style={{ backgroundColor: '#FFEBEE', color: '#C62828' }}>
+                                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#C62828' }} />
+                                                        Suspended
+                                                    </span>
+                                                )}
                                             </td>
+
                                             <td className="px-4 py-3 text-sm">
                                                 <span className={driver.demeritPoints > 10 ? 'text-red-600 font-semibold' : ''}>
                                                     {driver.demeritPoints}
                                                 </span>
                                             </td>
+
+                                            {/* Action Icon Button */}
                                             <td className="px-4 py-3">
                                                 {driver.licenseStatus === 'ACTIVE' ? (
                                                     <Button
                                                         size="sm"
-                                                        variant="destructive"
-                                                        onClick={() => handleSuspend(driver._id)}
+                                                        variant="ghost"
+                                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        title="Suspend License"
+                                                        onClick={() => openSuspendDialog(driver)}
                                                     >
-                                                        <UserX className="h-4 w-4 mr-1" />
+                                                        <ShieldOff className="h-4 w-4 mr-1" />
                                                         Suspend
                                                     </Button>
                                                 ) : (
                                                     <Button
                                                         size="sm"
-                                                        variant="default"
-                                                        onClick={() => handleActivate(driver._id)}
+                                                        variant="ghost"
+                                                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                        title="Activate License"
+                                                        onClick={() => openActivateDialog(driver)}
                                                     >
-                                                        <UserCheck className="h-4 w-4 mr-1" />
+                                                        <ShieldCheck className="h-4 w-4 mr-1" />
                                                         Activate
                                                     </Button>
                                                 )}
@@ -193,6 +258,22 @@ export default function DriversPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Reusable Confirm Dialog */}
+            {dialogConfig && (
+                <ConfirmDialog
+                    open={dialogOpen}
+                    onOpenChange={setDialogOpen}
+                    icon={dialogConfig.icon}
+                    iconColor={dialogConfig.iconColor}
+                    iconBgColor={dialogConfig.iconBgColor}
+                    title={dialogConfig.title}
+                    message={dialogConfig.message}
+                    confirmText={dialogConfig.confirmText}
+                    confirmColor={dialogConfig.confirmColor}
+                    onConfirm={handleStatusChange}
+                />
+            )}
         </div>
     );
 }
