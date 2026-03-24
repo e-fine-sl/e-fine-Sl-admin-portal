@@ -23,7 +23,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, ShieldCheck, ShieldAlert, CheckCircle2, QrCode } from 'lucide-react';
+import { Plus, Trash2, ShieldCheck, ShieldAlert, CheckCircle2, QrCode, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { USER_ROLES } from '@/lib/constants';
@@ -58,6 +58,28 @@ export default function AdminsPage() {
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
     const [isRegistering, setIsRegistering] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [emailError, setEmailError] = useState('');
+
+    const validateEmail = (email: string) => {
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) {
+            setEmailError('Email is required');
+            return false;
+        }
+        if (!regex.test(email)) {
+            setEmailError('Please enter a valid email address');
+            return false;
+        }
+        setEmailError('');
+        return true;
+    };
+
+    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newEmail = e.target.value;
+        setFormData({ ...formData, email: newEmail });
+        validateEmail(newEmail);
+    };
 
     // Only Super Admin can access
     if (user?.role !== USER_ROLES.SUPER_ADMIN) {
@@ -80,6 +102,7 @@ export default function AdminsPage() {
         setTempSecret('');
         setQrCodeUrl('');
         setVerificationCode('');
+        setEmailError('');
         setIsDialogOpen(true);
     };
 
@@ -88,6 +111,11 @@ export default function AdminsPage() {
 
         if (!formData.name || !formData.email || !formData.password) {
             toast.error('Please fill in all fields');
+            return;
+        }
+
+        if (!validateEmail(formData.email)) {
+            toast.error('Please enter a valid email address');
             return;
         }
 
@@ -209,28 +237,54 @@ export default function AdminsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email Address</Label>
+                                <Label htmlFor="email" className={emailError ? "text-red-500" : ""}>Email Address</Label>
                                 <Input
                                     id="email"
                                     type="email"
                                     value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    onChange={handleEmailChange}
                                     placeholder="admin@police.lk"
                                     required
+                                    className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
                                 />
+                                {emailError && (
+                                    <p className="text-sm text-red-500 animate-in fade-in slide-in-from-top-1">
+                                        {emailError}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="password">Password</Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    placeholder="Minimum 6 characters"
-                                    required
-                                    minLength={6}
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        placeholder="Minimum 6 characters"
+                                        required
+                                        minLength={6}
+                                        className="pr-10"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-4 w-4 text-gray-500" />
+                                        ) : (
+                                            <Eye className="h-4 w-4 text-gray-500" />
+                                        )}
+                                        <span className="sr-only">
+                                            {showPassword ? 'Hide password' : 'Show password'}
+                                        </span>
+                                    </Button>
+                                </div>
                             </div>
 
                             <div className="space-y-2">

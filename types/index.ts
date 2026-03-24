@@ -30,7 +30,7 @@ export interface Driver {
     phone: string;
     role: string;
     demeritPoints: number;
-    licenseStatus: 'Active' | 'Suspended';
+    licenseStatus: 'ACTIVE' | 'SUSPENDED';
     isVerified: boolean;
     licenseExpiryDate?: string;
     licenseIssueDate?: string;

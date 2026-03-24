@@ -7,8 +7,8 @@ export const USER_ROLES = {
 
 // License Status
 export const LICENSE_STATUS = {
-    ACTIVE: 'Active',
-    SUSPENDED: 'Suspended'
+    ACTIVE: 'ACTIVE',
+    SUSPENDED: 'SUSPENDED'
 } as const;
 
 // Fine Status

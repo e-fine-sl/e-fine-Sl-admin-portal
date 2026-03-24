@@ -122,7 +122,7 @@ export default function DriversPage() {
                                             <td className="px-4 py-3 text-sm">{driver.nic}</td>
                                             <td className="px-4 py-3 text-sm">{driver.email}</td>
                                             <td className="px-4 py-3">
-                                                <Badge variant={driver.licenseStatus === 'Active' ? 'default' : 'destructive'}>
+                                                <Badge variant={driver.licenseStatus === 'ACTIVE' ? 'default' : 'destructive'}>
                                                     {driver.licenseStatus}
                                                 </Badge>
                                             </td>
@@ -132,7 +132,7 @@ export default function DriversPage() {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
-                                                {driver.licenseStatus === 'Active' ? (
+                                                {driver.licenseStatus === 'ACTIVE' ? (
                                                     <Button
                                                         size="sm"
                                                         variant="destructive"
