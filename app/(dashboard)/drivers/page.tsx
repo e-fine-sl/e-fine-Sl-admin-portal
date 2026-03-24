@@ -196,24 +196,23 @@ export default function DriversPage() {
                                                 {driver.licenseStatus === 'ACTIVE' ? (
                                                     <Button
                                                         size="sm"
-                                                        variant="ghost"
-                                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        variant="destructive"
                                                         title="Suspend License"
                                                         onClick={() => openSuspendDialog(driver)}
                                                     >
                                                         <ShieldOff className="h-4 w-4 mr-1" />
-                                                        Suspend
+                                                        Suspend Driver
                                                     </Button>
                                                 ) : (
                                                     <Button
                                                         size="sm"
-                                                        variant="ghost"
-                                                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                        variant="default"
+                                                        className="bg-green-600 hover:bg-green-700 text-white"
                                                         title="Activate License"
                                                         onClick={() => openActivateDialog(driver)}
                                                     >
                                                         <ShieldCheck className="h-4 w-4 mr-1" />
-                                                        Activate
+                                                        Activate Driver
                                                     </Button>
                                                 )}
                                             </td>

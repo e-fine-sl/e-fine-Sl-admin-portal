@@ -63,7 +63,7 @@ export function ConfirmDialog({
     }, [open]);
 
     return (
-        <Dialog open={open} onOpenChange={loading ? undefined : onOpenChange}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-[420px] p-0 overflow-hidden">
                 {/* Icon Area */}
                 <div className="flex justify-center pt-8 pb-2">
