@@ -70,6 +70,7 @@ export interface Offense {
     amount: number;
     description?: string;
     sectionOfAct?: string;
+    demeritValue: number;
     createdAt: string;
     updatedAt: string;
 }

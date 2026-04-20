@@ -15,6 +15,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { formatCurrency } from '@/lib/utils';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,7 +41,8 @@ export default function OffensesPage() {
         offenseName: '',
         amount: '',
         description: '',
-        sectionOfAct: ''
+        sectionOfAct: '',
+        demeritValue: '2' // Default to P1_MINOR
     });
 
     const isSuperAdmin = user?.role === USER_ROLES.SUPER_ADMIN;
@@ -89,7 +97,8 @@ export default function OffensesPage() {
                 offenseName: offense.offenseName,
                 amount: offense.amount.toString(),
                 description: offense.description || '',
-                sectionOfAct: offense.sectionOfAct || ''
+                sectionOfAct: offense.sectionOfAct || '',
+                demeritValue: offense.demeritValue?.toString() || '2'
             });
         } else {
             setEditingOffense(null);
@@ -97,7 +106,8 @@ export default function OffensesPage() {
                 offenseName: '',
                 amount: '',
                 description: '',
-                sectionOfAct: ''
+                sectionOfAct: '',
+                demeritValue: '2'
             });
         }
         setIsDialogOpen(true);
@@ -110,7 +120,8 @@ export default function OffensesPage() {
             offenseName: '',
             amount: '',
             description: '',
-            sectionOfAct: ''
+            sectionOfAct: '',
+            demeritValue: '2'
         });
     };
 
@@ -129,7 +140,8 @@ export default function OffensesPage() {
                     offenseName: formData.offenseName,
                     amount: Number(formData.amount),
                     description: formData.description,
-                    sectionOfAct: formData.sectionOfAct
+                    sectionOfAct: formData.sectionOfAct,
+                    demeritValue: Number(formData.demeritValue)
                 });
                 toast.success('Offense type updated successfully');
             } else {
@@ -138,7 +150,8 @@ export default function OffensesPage() {
                     offenseName: formData.offenseName,
                     amount: Number(formData.amount),
                     description: formData.description,
-                    sectionOfAct: formData.sectionOfAct
+                    sectionOfAct: formData.sectionOfAct,
+                    demeritValue: Number(formData.demeritValue)
                 });
                 toast.success('Offense type created successfully');
             }
@@ -224,6 +237,7 @@ export default function OffensesPage() {
                                     <tr className="border-b bg-gray-50">
                                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Offense Name</th>
                                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Amount (LKR)</th>
+                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Demerit Pts</th>
                                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Section of Act</th>
                                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Description</th>
                                         {isSuperAdmin && (
@@ -237,6 +251,11 @@ export default function OffensesPage() {
                                             <td className="px-4 py-3 font-medium">{offense.offenseName}</td>
                                             <td className="px-4 py-3 text-sm font-semibold text-green-600">
                                                 {formatCurrency(offense.amount)}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                                                    {offense.demeritValue || '0'} Pts
+                                                </span>
                                             </td>
                                             <td className="px-4 py-3 text-sm">{offense.sectionOfAct || 'N/A'}</td>
                                             <td className="px-4 py-3 text-sm text-gray-600">
@@ -362,6 +381,24 @@ export default function OffensesPage() {
                                     value={formData.sectionOfAct}
                                     onChange={(e) => setFormData({ ...formData, sectionOfAct: e.target.value })}
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="demeritValue">Demerit Level <span className="text-red-500">*</span></Label>
+                                <Select 
+                                    value={formData.demeritValue} 
+                                    onValueChange={(value) => setFormData({ ...formData, demeritValue: value })}
+                                >
+                                    <SelectTrigger id="demeritValue">
+                                        <SelectValue placeholder="Select level" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="2">P1 - Minor (2 Pts)</SelectItem>
+                                        <SelectItem value="4">P2 - Moderate (4 Pts)</SelectItem>
+                                        <SelectItem value="6">P3 - Serious (6 Pts)</SelectItem>
+                                        <SelectItem value="8">P4 - Critical (8 Pts)</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
