@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
-import { Search, ShieldOff, ShieldCheck } from 'lucide-react';
+import { Search, ShieldOff, ShieldCheck, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -153,6 +153,8 @@ export default function DriversPage() {
                                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
                                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Demerit Points</th>
+                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Rating</th>
+                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Level</th>
                                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
                                     </tr>
                                 </thead>
@@ -186,9 +188,37 @@ export default function DriversPage() {
                                             </td>
 
                                             <td className="px-4 py-3 text-sm">
-                                                <span className={driver.demeritPoints > 10 ? 'text-red-600 font-semibold' : ''}>
-                                                    {driver.demeritPoints}
+                                                <span className={driver.demeritPoints < 10 ? 'text-red-600 font-semibold' : ''}>
+                                                    {driver.demeritPoints} / 24
                                                 </span>
+                                            </td>
+
+                                            <td className="px-4 py-3 text-sm">
+                                                <div className="flex items-center gap-1 text-amber-500">
+                                                    <Star className="h-4 w-4 fill-current" />
+                                                    <span className="font-semibold">{driver.ratingScore?.toFixed(1) || '0.0'}</span>
+                                                </div>
+                                            </td>
+
+                                            <td className="px-4 py-3 text-sm">
+                                                {(() => {
+                                                    const colors: Record<string, { bg: string, text: string, dot: string }> = {
+                                                        'EXCELLENT': { bg: '#E3F2FD', text: '#1565C0', dot: '#1565C0' },
+                                                        'GOOD':      { bg: '#E8F5E9', text: '#2E7D32', dot: '#2E7D32' },
+                                                        'FAIR':      { bg: '#FFF8E1', text: '#F9A825', dot: '#F9A825' },
+                                                        'WARNING':   { bg: '#FFF3E0', text: '#EF6C00', dot: '#EF6C00' },
+                                                        'DANGER':    { bg: '#FFEBEE', text: '#C62828', dot: '#C62828' },
+                                                        'SUSPENDED': { bg: '#FAFAFA', text: '#616161', dot: '#616161' },
+                                                    };
+                                                    const style = colors[driver.demeritLevel] || colors['EXCELLENT'];
+                                                    return (
+                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                                                            style={{ backgroundColor: style.bg, color: style.text }}>
+                                                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: style.dot }} />
+                                                            {driver.demeritLevel}
+                                                        </span>
+                                                    );
+                                                })()}
                                             </td>
 
                                             {/* Action Icon Button */}
