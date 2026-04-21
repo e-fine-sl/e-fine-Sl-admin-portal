@@ -87,7 +87,7 @@ export interface IssuedFine {
     amount: number;
     place: string;
     policeOfficerId: string;
-    status: 'Paid' | 'Unpaid';
+    status: 'PAID' | 'UNPAID';
     paymentId?: string;
     paidAt?: string;
     date: string;
