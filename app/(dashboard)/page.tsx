@@ -153,7 +153,7 @@ export default function DashboardPage() {
                                             <p className="font-semibold text-sm">
                                                 {formatCurrency(fine.amount)}
                                             </p>
-                                            <p className={`text-xs ${fine.status === 'Paid' ? 'text-green-600' : 'text-orange-600'
+                                            <p className={`text-xs ${fine.status === 'PAID' ? 'text-green-600' : 'text-orange-600'
                                                 }`}>
                                                 {fine.status}
                                             </p>
