@@ -39,7 +39,7 @@ export default function AccidentReportsPage() {
   const fetchStats = async () => {
     try {
       const res = await axios.get('http://localhost:5000/api/accident/reports/stats', {
-        headers: { Authorization: \`Bearer \${token}\` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) setStats(res.data.stats);
     } catch (err) {
@@ -51,7 +51,7 @@ export default function AccidentReportsPage() {
     setLoading(true);
     try {
       const res = await axios.get('http://localhost:5000/api/accident/reports', {
-        headers: { Authorization: \`Bearer \${token}\` },
+        headers: { Authorization: `Bearer ${token}` },
         params: { province, district, status, limit: 50 }
       });
       if (res.data.success) setReports(res.data.data);
@@ -66,9 +66,9 @@ export default function AccidentReportsPage() {
     setIsUpdateLoading(true);
     try {
       const res = await axios.patch(
-        \`http://localhost:5000/api/accident/reports/\${reportId}/status\`,
+        `http://localhost:5000/api/accident/reports/${reportId}/status`,
         { status: newStatus, adminName: user?.name },
-        { headers: { Authorization: \`Bearer \${token}\` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       
       if (res.data.success) {
@@ -90,9 +90,9 @@ export default function AccidentReportsPage() {
     setIsUpdateLoading(true);
     try {
       const res = await axios.post(
-        \`http://localhost:5000/api/accident/reports/\${reportId}/notify-division\`,
+        `http://localhost:5000/api/accident/reports/${reportId}/notify-division`,
         { adminName: user?.name },
-        { headers: { Authorization: \`Bearer \${token}\` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       
       if (res.data.success) {
@@ -256,7 +256,7 @@ export default function AccidentReportsPage() {
                       {new Date(report.reportedAt).toLocaleString()}
                     </td>
                     <td className="p-4">
-                      <span className={\`px-2.5 py-1 rounded-full text-xs font-medium border \${getStatusBadgeColor(report.status)}\`}>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(report.status)}`}>
                         {report.status}
                       </span>
                     </td>
@@ -293,7 +293,7 @@ export default function AccidentReportsPage() {
               <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg border">
                 <div>
                   <p className="text-sm text-gray-500">Current Status</p>
-                  <span className={\`mt-1 inline-block px-3 py-1 rounded-full text-sm font-medium border \${getStatusBadgeColor(selectedReport.status)}\`}>
+                  <span className={`mt-1 inline-block px-3 py-1 rounded-full text-sm font-medium border ${getStatusBadgeColor(selectedReport.status)}`}>
                     {selectedReport.status}
                   </span>
                 </div>
@@ -337,7 +337,7 @@ export default function AccidentReportsPage() {
                   </p>
                   <p className="text-sm text-gray-600 mt-1">{selectedReport.district}, {selectedReport.province}</p>
                   <a 
-                    href={\`https://maps.google.com/?q=\${selectedReport.location.coordinates[1]},\${selectedReport.location.coordinates[0]}\`}
+                    href={`https://maps.google.com/?q=${selectedReport.location.coordinates[1]},${selectedReport.location.coordinates[0]}`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-sm text-blue-600 hover:underline mt-2 inline-block"
