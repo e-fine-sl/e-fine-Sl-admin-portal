@@ -15,7 +15,8 @@ import {
     Car,
     AlertTriangle,
     UserCog,
-    BarChart3
+    BarChart3,
+    Activity
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -30,6 +31,7 @@ export function Sidebar() {
         { name: 'Officers', href: '/officers', icon: ShieldAlert },
         { name: 'Payments', href: '/payments', icon: CreditCard },
         { name: 'Reports', href: '/reports', icon: BarChart3 },
+        { name: 'Accident Reports', href: '/accident-reports', icon: Activity },
     ];
 
     // Add Admin Management for Super Admin

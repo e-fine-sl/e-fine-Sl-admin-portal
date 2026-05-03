@@ -150,3 +150,74 @@ export interface PaymentReportData {
     };
     payments: IssuedFine[];
 }
+
+// --- Accident Report Types ---
+export type AccidentStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED';
+export type AccidentType = 'Vehicle Collision' | 'Pedestrian Accident' | 'Hit & Run' | 'Road Hazard / Obstruction' | 'Other';
+
+export interface AccidentReport {
+    _id: string;
+    driverLicense: string;
+    driverName: string;
+    driverPhone?: string;
+    accidentType: AccidentType;
+    description: string;
+    location: {
+        type: 'Point';
+        coordinates: [number, number]; // [lng, lat]
+    };
+    province: string;
+    district: string;
+    policeDivision: string;
+    officersNotified: number;
+    stationNotified: string;
+    emailSent: boolean;
+    status: AccidentStatus;
+    reportedAt: string;
+    acknowledgedBy?: string;
+    resolvedBy?: string;
+}
+
+export interface AccidentStatsResponse {
+    success: boolean;
+    stats: {
+        total: number;
+        open: number;
+        acknowledged: number;
+        resolved: number;
+        byProvince: Array<{ _id: string; count: number }>;
+        byType: Array<{ _id: string; count: number }>;
+    };
+}
+
+// SL Geo Constants for Admin Filters
+export const SL_PROVINCES = [
+    'Western', 'Central', 'Southern', 'Northern', 'Eastern',
+    'North Western', 'North Central', 'Uva', 'Sabaragamuwa'
+] as const;
+
+export const SL_DISTRICTS = [
+    'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
+    'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kilinochchi', 'Mannar',
+    'Vavuniya', 'Mullaitivu', 'Trincomalee', 'Batticaloa', 'Ampara',
+    'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla',
+    'Monaragala', 'Ratnapura', 'Kegalle'
+] as const;
+
+export const SL_POLICE_DIVISIONS = [
+    'Colombo', 'Dehiwela', 'Nugegoda', 'Sri Jayawardenepura Kotte', 'Kelaniya', 'Moratuwa',
+    'Homagama', 'Kaduwela', 'Boralesgamuwa', 'Gampaha', 'Negombo', 'Ja-Ela', 'Wattala',
+    'Minuwangoda', 'Divulapitiya', 'Mirigama', 'Kalutara', 'Panadura', 'Horana', 'Mathugama',
+    'Beruwala', 'Kandy', 'Peradeniya', 'Katugastota', 'Gampola', 'Nawalapitiya', 'Akurana',
+    'Matale', 'Dambulla', 'Galewela', 'Ukuwela', 'Nuwara Eliya', 'Hatton', 'Talawakelle',
+    'Ragala', 'Galle', 'Hikkaduwa', 'Elpitiya', 'Balapitiya', 'Ambalangoda', 'Matara',
+    'Weligama', 'Dikwella', 'Akuressa', 'Hambantota', 'Tangalle', 'Tissamaharama', 'Beliatta',
+    'Jaffna', 'Chavakachcheri', 'Point Pedro', 'Kilinochchi', 'Paranthan', 'Mannar', 'Murunkan',
+    'Vavuniya', 'Nedunkerni', 'Mullaitivu', 'Oddusuddan', 'Trincomalee', 'Kinniya', 'Muttur',
+    'Batticaloa', 'Kattankudy', 'Valaichenai', 'Ampara', 'Kalmunai', 'Sammanthurai', 'Pottuvil',
+    'Kurunegala', 'Kuliyapitiya', 'Nikaweratiya', 'Maho', 'Wariyapola', 'Puttalam', 'Chilaw',
+    'Wennappuwa', 'Marawila', 'Anuradhapura', 'Kekirawa', 'Medawachchiya', 'Mihintale',
+    'Polonnaruwa', 'Medirigiriya', 'Hingurakgoda', 'Badulla', 'Bandarawela', 'Haputale',
+    'Welimada', 'Mahiyanganaya', 'Monaragala', 'Wellawaya', 'Buttala', 'Ratnapura',
+    'Embilipitiya', 'Balangoda', 'Pelmadulla', 'Kegalle', 'Mawanella', 'Warakapola', 'Rambukkana'
+] as const;

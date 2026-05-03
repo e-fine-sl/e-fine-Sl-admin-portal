@@ -52,3 +52,18 @@ export const REPORT_TYPES = [
     { value: 'payments', label: 'Payment Summary Report' },
     { value: 'driver-violations', label: 'Driver Violation Report' }
 ] as const;
+
+// Accident Constants
+export const ACCIDENT_STATUSES = {
+    OPEN: 'OPEN',
+    ACKNOWLEDGED: 'ACKNOWLEDGED',
+    RESOLVED: 'RESOLVED'
+} as const;
+
+export const ACCIDENT_TYPE_ICONS: Record<string, string> = {
+    'Vehicle Collision': '🚗',
+    'Pedestrian Accident': '🚶',
+    'Hit & Run': '🏃',
+    'Road Hazard / Obstruction': '⚠️',
+    'Other': '📋'
+};
