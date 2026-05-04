@@ -174,6 +174,7 @@ export interface AccidentReport {
     emailSent: boolean;
     status: AccidentStatus;
     reportedAt: string;
+    images?: string[];
     acknowledgedBy?: string;
     resolvedBy?: string;
 }

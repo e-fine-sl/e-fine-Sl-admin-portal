@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import api from '@/lib/api';
+import api, { API_URL } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useSocket } from '@/context/SocketContext';
 import { AccidentReport, AccidentStatsResponse, SL_PROVINCES, SL_DISTRICTS } from '@/types';
@@ -390,6 +390,30 @@ export default function AccidentReportsPage() {
                   </li>
                 </ul>
               </div>
+
+              {/* Images Gallery */}
+              {selectedReport.images && selectedReport.images.length > 0 && (
+                <div className="border rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-3">Incident Photos</h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    {selectedReport.images.map((img, idx) => (
+                      <a 
+                        key={idx}
+                        href={`${API_URL}${img}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="relative h-24 bg-gray-100 rounded border hover:opacity-80 transition-opacity overflow-hidden"
+                      >
+                        <img 
+                          src={`${API_URL}${img}`} 
+                          alt={`Accident scene ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
             </div>
           )}
