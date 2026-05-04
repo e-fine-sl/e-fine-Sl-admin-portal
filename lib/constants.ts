@@ -61,9 +61,9 @@ export const ACCIDENT_STATUSES = {
 } as const;
 
 export const ACCIDENT_TYPE_ICONS: Record<string, string> = {
-    'Vehicle Collision': '�',
-    'Pedestrian Accident': '�',
-    'Hit & Run': '🏃',
+    'Vehicle Collision': '',
+    'Pedestrian Accident': '',
+    'Hit & Run': '',
     'Road Hazard / Obstruction': '',
     'Other': ''
 };

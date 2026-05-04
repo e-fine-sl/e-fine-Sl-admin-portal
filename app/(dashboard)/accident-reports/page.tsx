@@ -250,7 +250,6 @@ export default function AccidentReportsPage() {
                   <tr key={report._id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center">
-                        <span className="text-xl mr-2">{ACCIDENT_TYPE_ICONS[report.accidentType] || ''}</span>
                         <span className="font-medium text-gray-900">{report.accidentType}</span>
                       </div>
                     </td>
@@ -292,7 +291,6 @@ export default function AccidentReportsPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center text-xl">
-              <span className="mr-2 text-2xl">{selectedReport ? ACCIDENT_TYPE_ICONS[selectedReport.accidentType] : ''}</span>
               {selectedReport?.accidentType} Report
             </DialogTitle>
           </DialogHeader>
