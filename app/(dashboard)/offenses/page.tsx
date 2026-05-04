@@ -202,7 +202,7 @@ export default function OffensesPage() {
             {!isSuperAdmin && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p className="text-sm text-yellow-800">
-                        ⚠️ Only Super Admins can create, update, or delete offense types. You have read-only access.
+                         Only Super Admins can create, update, or delete offense types. You have read-only access.
                     </p>
                 </div>
             )}

@@ -431,7 +431,7 @@ export default function OfficersPage() {
                             <div className="space-y-4 py-4">
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                                     <p className="text-sm text-blue-800">
-                                        ✉️ A 6-digit OTP has been sent to the official email of <strong>{stationName}</strong>.
+                                         A 6-digit OTP has been sent to the official email of <strong>{stationName}</strong>.
                                         Please obtain the code from the station OIC.
                                     </p>
                                 </div>

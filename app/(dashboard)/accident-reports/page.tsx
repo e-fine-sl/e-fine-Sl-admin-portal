@@ -250,7 +250,7 @@ export default function AccidentReportsPage() {
                   <tr key={report._id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center">
-                        <span className="text-xl mr-2">{ACCIDENT_TYPE_ICONS[report.accidentType] || '📋'}</span>
+                        <span className="text-xl mr-2">{ACCIDENT_TYPE_ICONS[report.accidentType] || ''}</span>
                         <span className="font-medium text-gray-900">{report.accidentType}</span>
                       </div>
                     </td>
