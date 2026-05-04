@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { useSocket } from '@/context/SocketContext';
 import { AccidentReport, AccidentStatsResponse, SL_PROVINCES, SL_DISTRICTS } from '@/types';
 import { ACCIDENT_STATUSES, ACCIDENT_TYPE_ICONS } from '@/lib/constants';
 import { Activity, CheckCircle, MapPin, Search, Eye, AlertCircle, Clock } from 'lucide-react';
@@ -15,6 +16,7 @@ import {
 
 export default function AccidentReportsPage() {
   const { token, user } = useAuth();
+  const { notifications } = useSocket();
   const [reports, setReports] = useState<AccidentReport[]>([]);
   const [stats, setStats] = useState<AccidentStatsResponse['stats'] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +37,19 @@ export default function AccidentReportsPage() {
       fetchReports();
     }
   }, [token, province, district, status]);
+
+  // Watch for new notifications from socket context
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const latest = notifications[0];
+      setReports((prev) => {
+        // Prevent duplicates
+        if (prev.some(r => r._id === latest._id)) return prev;
+        return [latest, ...prev];
+      });
+      fetchStats(); // Update the top cards instantly
+    }
+  }, [notifications]);
 
   const fetchStats = async () => {
     try {
