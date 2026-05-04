@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { AccidentReport, AccidentStatsResponse, SL_PROVINCES, SL_DISTRICTS } from '@/types';
 import { ACCIDENT_STATUSES, ACCIDENT_TYPE_ICONS } from '@/lib/constants';
@@ -38,9 +38,7 @@ export default function AccidentReportsPage() {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/accident/reports/stats', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/accident/reports/stats');
       if (res.data.success) setStats(res.data.stats);
     } catch (err) {
       console.error('Failed to fetch stats', err);
@@ -50,8 +48,7 @@ export default function AccidentReportsPage() {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/accident/reports', {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get('/accident/reports', {
         params: { province, district, status, limit: 50 }
       });
       if (res.data.success) setReports(res.data.data);
@@ -65,10 +62,9 @@ export default function AccidentReportsPage() {
   const handleStatusUpdate = async (reportId: string, newStatus: string) => {
     setIsUpdateLoading(true);
     try {
-      const res = await axios.patch(
-        `http://localhost:5000/api/accident/reports/${reportId}/status`,
-        { status: newStatus, adminName: user?.name },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await api.patch(
+        `/accident/reports/${reportId}/status`,
+        { status: newStatus, adminName: user?.name }
       );
       
       if (res.data.success) {
@@ -89,10 +85,9 @@ export default function AccidentReportsPage() {
     
     setIsUpdateLoading(true);
     try {
-      const res = await axios.post(
-        `http://localhost:5000/api/accident/reports/${reportId}/notify-division`,
-        { adminName: user?.name },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await api.post(
+        `/accident/reports/${reportId}/notify-division`,
+        { adminName: user?.name }
       );
       
       if (res.data.success) {

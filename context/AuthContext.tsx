@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 
 interface AuthContextType {
     user: AdminUser | null;
+    token: string | null;
     loading: boolean;
     login: (credentials: LoginCredentials, totpToken?: string) => Promise<boolean | { requireTwoFactor: boolean }>;
     logout: (force?: boolean) => Promise<void>;
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AdminUser | null>(null);
+    const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
@@ -29,9 +31,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const token = localStorage.getItem('token');
 
         if (!token) {
+            setToken(null);
             setLoading(false);
             return;
         }
+
+        setToken(token);
 
         try {
             const storedUser = localStorage.getItem('user');
@@ -45,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.removeItem('sessionToken');
             localStorage.removeItem('user');
             setUser(null);
+            setToken(null);
         } finally {
             setLoading(false);
         }
@@ -65,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('sessionToken', sessionToken || '');
             localStorage.setItem('user', JSON.stringify(user));
             setUser(user);
+            setToken(accessToken || token);
 
             toast.success('Login successful');
             router.push('/');
@@ -97,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.removeItem('sessionToken');
             localStorage.removeItem('user');
             setUser(null);
+            setToken(null);
             router.push('/login');
             toast.success('Logged out successfully');
         }
@@ -108,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
+        <AuthContext.Provider value={{ user, token, loading, login, logout, updateUser }}>
             {children}
         </AuthContext.Provider>
     );
