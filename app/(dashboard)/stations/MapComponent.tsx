@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-import { GoogleProvider, GeoSearchControl } from 'leaflet-geosearch';
+import { OpenStreetMapProvider, GeoSearchControl } from 'leaflet-geosearch';
 import 'leaflet-geosearch/dist/geosearch.css';
 
 // Fix for default Leaflet icon not showing correctly in Next.js
@@ -28,18 +28,41 @@ function SearchField() {
     const map = useMap();
 
     useEffect(() => {
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
-        
-        const provider = new GoogleProvider({
-            apiKey: apiKey,
+        const baseProvider = new OpenStreetMapProvider({
             params: {
-                components: 'country:lk', // Restrict to Sri Lanka
+                countrycodes: 'lk', // Restrict search results to Sri Lanka
+                addressdetails: 1,
             },
         });
+
+        // Wrapper to fix common spelling mistakes since Nominatim is strict
+        const customProvider = {
+            search: async ({ query }: { query: string }) => {
+                let fixedQuery = query.toLowerCase();
+                
+                // Common Sri Lankan spelling variations and typos
+                const corrections: Record<string, string> = {
+                    'mathara': 'matara',
+                    'kolombo': 'colombo',
+                    'rathnapura': 'ratnapura',
+                    'kurunagala': 'kurunegala',
+                    'anuradapura': 'anuradhapura',
+                    'moneragala': 'monaragala',
+                    'hambanthota': 'hambantota',
+                    'kegalle': 'kegalla',
+                };
+
+                for (const [typo, fix] of Object.entries(corrections)) {
+                    fixedQuery = fixedQuery.replace(new RegExp(`\\b${typo}\\b`, 'g'), fix);
+                }
+
+                return baseProvider.search({ query: fixedQuery });
+            }
+        };
         
         // @ts-ignore
         const searchControl = new GeoSearchControl({
-            provider: provider,
+            provider: customProvider,
             style: 'bar',
             showMarker: false,
             showPopup: false,
