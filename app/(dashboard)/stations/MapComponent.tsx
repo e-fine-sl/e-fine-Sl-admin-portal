@@ -47,8 +47,9 @@ function SearchField() {
             retainZoomLevel: false,
             animateZoom: true,
             keepResult: true,
-            autoComplete: false, // Force user to press Enter to search
-            searchLabel: 'Type location and press Enter...'
+            autoComplete: true, 
+            autoCompleteDelay: 250,
+            searchLabel: 'Search for location in Sri Lanka...'
         });
 
         map.addControl(searchControl);
