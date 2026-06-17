@@ -28,7 +28,12 @@ function SearchField() {
     const map = useMap();
 
     useEffect(() => {
-        const provider = new OpenStreetMapProvider();
+        const provider = new OpenStreetMapProvider({
+            params: {
+                countrycodes: 'lk', // Restrict search results to Sri Lanka
+                addressdetails: 1,
+            },
+        });
         
         // @ts-ignore
         const searchControl = new GeoSearchControl({
@@ -40,7 +45,7 @@ function SearchField() {
             retainZoomLevel: false,
             animateZoom: true,
             keepResult: true,
-            searchLabel: 'Search for location...'
+            searchLabel: 'Search for location in Sri Lanka...'
         });
 
         map.addControl(searchControl);
