@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+
+import { OpenStreetMapProvider, GeoSearchControl } from 'leaflet-geosearch';
+import 'leaflet-geosearch/dist/geosearch.css';
 
 // Fix for default Leaflet icon not showing correctly in Next.js
 const customIcon = new L.Icon({
@@ -21,12 +24,54 @@ interface MapComponentProps {
     onChange: (position: [number, number]) => void;
 }
 
+function SearchField() {
+    const map = useMap();
+
+    useEffect(() => {
+        const provider = new OpenStreetMapProvider();
+        
+        // @ts-ignore
+        const searchControl = new GeoSearchControl({
+            provider: provider,
+            style: 'bar',
+            showMarker: false,
+            showPopup: false,
+            autoClose: true,
+            retainZoomLevel: false,
+            animateZoom: true,
+            keepResult: true,
+            searchLabel: 'Search for location...'
+        });
+
+        map.addControl(searchControl);
+
+        return () => {
+            map.removeControl(searchControl);
+        };
+    }, [map]);
+
+    return null;
+}
+
 function LocationMarker({ position, onChange }: MapComponentProps) {
-    useMapEvents({
+    const map = useMapEvents({
         click(e) {
             onChange([e.latlng.lat, e.latlng.lng]);
         },
     });
+
+    useEffect(() => {
+        map.on('geosearch/showlocation', (result: any) => {
+            if (result && result.location) {
+                // Leaflet-geosearch result.location has x (lng) and y (lat)
+                onChange([result.location.y, result.location.x]);
+            }
+        });
+        
+        return () => {
+            map.off('geosearch/showlocation');
+        };
+    }, [map, onChange]);
 
     return position === null ? null : (
         <Marker position={position} icon={customIcon} />
@@ -38,7 +83,8 @@ export default function MapComponent({ position, onChange }: MapComponentProps) 
     const defaultCenter: [number, number] = [7.8731, 80.7718]; 
 
     return (
-        <div className="h-[300px] w-full rounded-md border overflow-hidden">
+        <div className="h-[300px] w-full rounded-md border overflow-hidden relative">
+            {/* The leaflet-geosearch bar will append to the map control container */}
             <MapContainer 
                 center={position || defaultCenter} 
                 zoom={position ? 15 : 7} 
@@ -49,6 +95,7 @@ export default function MapComponent({ position, onChange }: MapComponentProps) 
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                <SearchField />
                 <LocationMarker position={position} onChange={onChange} />
             </MapContainer>
         </div>

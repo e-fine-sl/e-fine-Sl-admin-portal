@@ -136,10 +136,10 @@ export default function StationsPage() {
 
         try {
             if (isEditMode && selectedStationId) {
-                await api.put(`/stations/${selectedStationId}`, payload);
+                await api.put(`/admin/stations/${selectedStationId}`, payload);
                 toast.success('Station updated successfully');
             } else {
-                await api.post('/stations', payload);
+                await api.post('/admin/stations', payload);
                 toast.success('Station added successfully');
             }
             fetchStations();
@@ -153,7 +153,7 @@ export default function StationsPage() {
         if (!selectedStationId) return;
 
         try {
-            await api.delete(`/stations/${selectedStationId}`);
+            await api.delete(`/admin/stations/${selectedStationId}`);
             toast.success('Station deleted successfully');
             fetchStations();
             setIsDeleteDialogOpen(false);
