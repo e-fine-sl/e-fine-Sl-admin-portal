@@ -28,16 +28,41 @@ function SearchField() {
     const map = useMap();
 
     useEffect(() => {
-        const provider = new OpenStreetMapProvider({
+        const baseProvider = new OpenStreetMapProvider({
             params: {
                 countrycodes: 'lk', // Restrict search results to Sri Lanka
                 addressdetails: 1,
             },
         });
+
+        // Wrapper to fix common spelling mistakes since Nominatim is strict
+        const customProvider = {
+            search: async ({ query }: { query: string }) => {
+                let fixedQuery = query.toLowerCase();
+                
+                // Common Sri Lankan spelling variations and typos
+                const corrections: Record<string, string> = {
+                    'mathara': 'matara',
+                    'kolombo': 'colombo',
+                    'rathnapura': 'ratnapura',
+                    'kurunagala': 'kurunegala',
+                    'anuradapura': 'anuradhapura',
+                    'moneragala': 'monaragala',
+                    'hambanthota': 'hambantota',
+                    'kegalle': 'kegalla',
+                };
+
+                for (const [typo, fix] of Object.entries(corrections)) {
+                    fixedQuery = fixedQuery.replace(new RegExp(`\\b${typo}\\b`, 'g'), fix);
+                }
+
+                return baseProvider.search({ query: fixedQuery });
+            }
+        };
         
         // @ts-ignore
         const searchControl = new GeoSearchControl({
-            provider: provider,
+            provider: customProvider,
             style: 'bar',
             showMarker: false,
             showPopup: false,
