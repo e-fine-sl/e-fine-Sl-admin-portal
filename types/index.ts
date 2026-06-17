@@ -51,6 +51,22 @@ export interface VehicleClass {
     expiryDate: string;
 }
 
+// Police Station Types
+export interface PoliceStation {
+    _id: string;
+    stationCode: string;
+    name: string;
+    province: string;
+    district: string;
+    officialEmail: string;
+    location?: {
+        type: 'Point';
+        coordinates: [number, number]; // [longitude, latitude]
+    };
+    createdAt?: string;
+    updatedAt?: string;
+}
+
 // Police Officer Types
 export interface Officer {
     _id: string;
