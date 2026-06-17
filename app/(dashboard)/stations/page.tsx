@@ -28,7 +28,7 @@ import { Plus, Trash2, Pencil, Building2, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { USER_ROLES } from '@/lib/constants';
-import { SL_DISTRICTS, SL_PROVINCES } from '@/types';
+import { SL_DISTRICTS, SL_PROVINCES, PROVINCE_DISTRICTS_MAP } from '@/types';
 
 // Dynamically import map component to prevent SSR hydration errors with Leaflet
 const DynamicMapComponent = dynamic(() => import('./MapComponent'), {
@@ -168,6 +168,14 @@ export default function StationsPage() {
         return matchesProvince && matchesDistrict;
     });
 
+    const filterDistrictsList = filterProvince === 'All' 
+        ? SL_DISTRICTS 
+        : PROVINCE_DISTRICTS_MAP[filterProvince] || [];
+
+    const formDistrictsList = formData.province 
+        ? PROVINCE_DISTRICTS_MAP[formData.province] || []
+        : SL_DISTRICTS;
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -191,7 +199,13 @@ export default function StationsPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <CardTitle>Directory ({filteredStations.length})</CardTitle>
                         <div className="flex flex-col sm:flex-row gap-3">
-                            <Select value={filterProvince} onValueChange={setFilterProvince}>
+                            <Select 
+                                value={filterProvince} 
+                                onValueChange={(val) => {
+                                    setFilterProvince(val);
+                                    setFilterDistrict('All');
+                                }}
+                            >
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="All Provinces" />
                                 </SelectTrigger>
@@ -208,7 +222,7 @@ export default function StationsPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="All">All Districts</SelectItem>
-                                    {SL_DISTRICTS?.map((dist: string) => (
+                                    {filterDistrictsList?.map((dist: string) => (
                                         <SelectItem key={dist} value={dist}>{dist}</SelectItem>
                                     ))}
                                 </SelectContent>
@@ -330,7 +344,7 @@ export default function StationsPage() {
                                 <Label htmlFor="province">Province <span className="text-red-500">*</span></Label>
                                 <Select
                                     value={formData.province}
-                                    onValueChange={(val) => setFormData({ ...formData, province: val })}
+                                    onValueChange={(val) => setFormData({ ...formData, province: val, district: '' })}
                                     required
                                 >
                                     <SelectTrigger>
@@ -349,12 +363,13 @@ export default function StationsPage() {
                                     value={formData.district}
                                     onValueChange={(val) => setFormData({ ...formData, district: val })}
                                     required
+                                    disabled={!formData.province}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select District" />
+                                        <SelectValue placeholder={formData.province ? "Select District" : "Select Province First"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {SL_DISTRICTS?.map((district: string) => (
+                                        {formDistrictsList?.map((district: string) => (
                                             <SelectItem key={district} value={district}>{district}</SelectItem>
                                         ))}
                                     </SelectContent>
