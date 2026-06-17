@@ -382,11 +382,16 @@ export default function AccidentReportsPage() {
                   </li>
                   <li className="flex items-center">
                     {selectedReport.emailSent ? (
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                      <CheckCircle className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
                     ) : (
-                      <AlertCircle className="h-4 w-4 mr-2 text-red-500" />
+                      <AlertCircle className="h-4 w-4 mr-2 text-red-500 flex-shrink-0" />
                     )}
-                    Email sent to {selectedReport.stationNotified || 'nearest station'}
+                    {selectedReport.emailSent 
+                      ? (selectedReport.nearbyStationsNotified && selectedReport.nearbyStationsNotified.length > 0
+                          ? `Email sent to ${selectedReport.nearbyStationsNotified.length} nearby station(s) (${selectedReport.nearbyStationsNotified.join(', ')})`
+                          : `Email sent to ${selectedReport.stationNotified}`)
+                      : 'No nearby police stations found within 10km (No emails sent)'
+                    }
                   </li>
                 </ul>
               </div>

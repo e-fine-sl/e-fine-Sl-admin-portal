@@ -187,6 +187,8 @@ export interface AccidentReport {
     policeDivision: string;
     officersNotified: number;
     stationNotified: string;
+    nearbyStationsNotified?: string[];
+    nearbyStationEmails?: string[];
     emailSent: boolean;
     status: AccidentStatus;
     reportedAt: string;
