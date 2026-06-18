@@ -17,12 +17,15 @@ import {
     UserCog,
     BarChart3,
     Activity,
-    Building2
+    Building2,
+    Settings2
 } from 'lucide-react';
 
 export function Sidebar() {
     const pathname = usePathname();
     const { user, logout } = useAuth();
+
+    const canManageSettings = user?.role === 'super_admin' || user?.role === 'admin_officer';
 
     const navigation = [
         { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -43,6 +46,10 @@ export function Sidebar() {
 
     // Add Settings for everyone
     navigation.push({ name: 'Settings', href: '/settings', icon: Settings });
+
+    const masterData = [
+        { name: 'System Config', href: '/system-config', icon: Settings2 }
+    ];
 
     return (
         <div className="flex h-screen w-64 flex-col bg-gray-900 text-white">
@@ -71,6 +78,34 @@ export function Sidebar() {
                         </Link>
                     );
                 })}
+                
+                {canManageSettings && (
+                    <>
+                        <div className="pt-4 pb-2">
+                            <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                Master Data
+                            </p>
+                        </div>
+                        {masterData.map((item) => {
+                            const isActive = pathname === item.href;
+                            return (
+                                <Link
+                                    key={item.name}
+                                    href={item.href}
+                                    className={cn(
+                                        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                                        isActive
+                                            ? 'bg-blue-600 text-white'
+                                            : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                    )}
+                                >
+                                    <item.icon className="h-5 w-5" />
+                                    {item.name}
+                                </Link>
+                            );
+                        })}
+                    </>
+                )}
             </nav>
 
             {/* User Section */}
