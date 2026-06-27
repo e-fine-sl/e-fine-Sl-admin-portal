@@ -2,10 +2,11 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, StandaloneSearchBox, InfoWindow } from '@react-google-maps/api';
-import { Search, Building2, MapPin, Pencil, Trash2 } from 'lucide-react';
+import { Search, Building2, MapPin, Pencil, Trash2, Navigation, AlertCircle } from 'lucide-react';
 import { PoliceStation } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface GlobalStationsMapProps {
     stations: PoliceStation[];
@@ -27,6 +28,19 @@ const defaultCenter = {
 
 const libraries: ("places" | "drawing" | "geometry" | "localContext" | "visualization")[] = ['places'];
 
+// Haversine formula to calculate distance between two coordinates in km
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return R * c; 
+}
+
 export default function GlobalStationsMap({ stations, onEdit, onDelete, canManageStations }: GlobalStationsMapProps) {
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script-global',
@@ -37,6 +51,8 @@ export default function GlobalStationsMap({ stations, onEdit, onDelete, canManag
     const [map, setMap] = useState<google.maps.Map | null>(null);
     const [searchBox, setSearchBox] = useState<google.maps.places.SearchBox | null>(null);
     const [selectedStation, setSelectedStation] = useState<PoliceStation | null>(null);
+    const [nearbyStations, setNearbyStations] = useState<{station: PoliceStation, distance: number, isTextMatch: boolean}[] | null>(null);
+    const [searchedPlace, setSearchedPlace] = useState<string>('');
 
     const onMapLoad = useCallback((mapInstance: google.maps.Map) => {
         setMap(mapInstance);
@@ -86,10 +102,39 @@ export default function GlobalStationsMap({ stations, onEdit, onDelete, canManag
         if (places && places.length > 0) {
             const place = places[0];
             if (place.geometry && place.geometry.location) {
-                const lat = place.geometry.location.lat();
-                const lng = place.geometry.location.lng();
-                map?.panTo({ lat, lng });
-                map?.setZoom(13);
+                const searchLat = place.geometry.location.lat();
+                const searchLng = place.geometry.location.lng();
+                
+                map?.panTo({ lat: searchLat, lng: searchLng });
+                map?.setZoom(12);
+                
+                const placeName = place.name || place.formatted_address || '';
+                setSearchedPlace(placeName);
+
+                // Find nearby stations (within 30km or text match)
+                const nearby = stations.map(s => {
+                    let dist = Infinity;
+                    let isTextMatch = false;
+                    
+                    if (s.location && s.location.coordinates) {
+                        dist = calculateDistance(
+                            searchLat, searchLng,
+                            s.location.coordinates[1], s.location.coordinates[0]
+                        );
+                    }
+                    
+                    // Fallback to text matching if coordinates are missing or just to be helpful
+                    const searchStr = placeName.toLowerCase();
+                    if (searchStr && (s.name.toLowerCase().includes(searchStr) || s.district.toLowerCase().includes(searchStr) || s.province?.toLowerCase().includes(searchStr))) {
+                        isTextMatch = true;
+                    }
+
+                    return { station: s, distance: dist, isTextMatch };
+                })
+                .filter(item => item.distance <= 30 || item.isTextMatch)
+                .sort((a, b) => a.distance - b.distance);
+                
+                setNearbyStations(nearby);
             }
         }
     };
@@ -147,6 +192,69 @@ export default function GlobalStationsMap({ stations, onEdit, onDelete, canManag
                         </div>
                     </StandaloneSearchBox>
                 </div>
+
+                {/* Nearby Stations Panel */}
+                {nearbyStations !== null && (
+                    <div className="absolute top-20 left-4 w-[320px] max-h-[70%] bg-white rounded-xl shadow-xl border border-gray-200 z-10 flex flex-col overflow-hidden animate-in slide-in-from-left-4 duration-300">
+                        <div className="bg-blue-600 text-white p-3 flex items-center justify-between">
+                            <h3 className="font-semibold flex items-center text-sm">
+                                <Navigation className="h-4 w-4 mr-2" />
+                                Near {searchedPlace.split(',')[0]}
+                            </h3>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 w-6 p-0 hover:bg-blue-700 text-white rounded-full"
+                                onClick={() => setNearbyStations(null)}
+                            >
+                                &times;
+                            </Button>
+                        </div>
+                        
+                        <div className="p-0 flex-1 overflow-hidden">
+                            {nearbyStations.length === 0 ? (
+                                <div className="p-4 text-center text-sm text-gray-500">
+                                    No police stations found within 30km of this location.
+                                </div>
+                            ) : (
+                                <ScrollArea className="h-full max-h-[400px]">
+                                    <div className="divide-y divide-gray-100">
+                                        {nearbyStations.map((item, idx) => (
+                                            <div 
+                                                key={idx} 
+                                                className="p-3 hover:bg-blue-50 cursor-pointer transition-colors"
+                                                onClick={() => {
+                                                    if (item.station.location?.coordinates) {
+                                                        map?.panTo({ lat: item.station.location.coordinates[1], lng: item.station.location.coordinates[0] });
+                                                        map?.setZoom(15);
+                                                        setSelectedStation(item.station);
+                                                    }
+                                                }}
+                                            >
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <h4 className="font-medium text-sm text-gray-900">{item.station.name}</h4>
+                                                    {item.distance !== Infinity ? (
+                                                        <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+                                                            {item.distance.toFixed(1)} km
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[10px] uppercase font-semibold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded flex items-center gap-1" title="Location coordinates not set on map">
+                                                            <AlertCircle className="h-3 w-3" /> No Pin
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center text-xs text-gray-500">
+                                                    <MapPin className="h-3 w-3 mr-1" />
+                                                    {item.station.district} District
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Render all stations as markers */}
                 {stations.map(station => {
