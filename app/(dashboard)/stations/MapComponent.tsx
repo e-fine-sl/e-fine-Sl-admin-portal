@@ -113,6 +113,11 @@ export default function MapComponent({ position, onChange }: MapComponentProps) 
                                 type="text"
                                 placeholder="Search for location in Sri Lanka..."
                                 className="w-full h-10 pl-10 pr-4 rounded-full shadow-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/95 backdrop-blur-sm text-sm text-gray-800"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                    }
+                                }}
                             />
                             <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-gray-500" />
                         </div>

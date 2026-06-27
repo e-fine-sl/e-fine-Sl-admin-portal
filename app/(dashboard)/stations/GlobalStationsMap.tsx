@@ -183,6 +183,11 @@ export default function GlobalStationsMap({ stations, onEdit, onDelete, canManag
                                 type="text"
                                 placeholder="Search for any location in Sri Lanka..."
                                 className="w-full h-12 pl-12 pr-4 rounded-full shadow-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/95 backdrop-blur-md text-base text-gray-800 transition-all duration-200"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                    }
+                                }}
                             />
                             <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-200" />
                         </div>
