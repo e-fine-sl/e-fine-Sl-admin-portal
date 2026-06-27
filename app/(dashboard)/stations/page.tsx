@@ -49,6 +49,8 @@ export default function StationsPage() {
 
     const [filterProvince, setFilterProvince] = useState<string>('All');
     const [filterDistrict, setFilterDistrict] = useState<string>('All');
+    const [page, setPage] = useState(1);
+    const limit = 15;
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -174,6 +176,12 @@ export default function StationsPage() {
         return matchesProvince && matchesDistrict;
     });
 
+    useEffect(() => {
+        setPage(1);
+    }, [filterProvince, filterDistrict]);
+
+    const paginatedStations = filteredStations.slice((page - 1) * limit, page * limit);
+
     const filterDistrictsList = filterProvince === 'All' 
         ? SL_DISTRICTS 
         : PROVINCE_DISTRICTS_MAP[filterProvince] || [];
@@ -292,7 +300,7 @@ export default function StationsPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredStations.map((station) => (
+                                    {paginatedStations.map((station) => (
                                         <tr key={station._id} className="border-b hover:bg-gray-50">
                                             <td className="px-4 py-3 font-medium">
                                                 <Badge variant="outline">{station.stationCode}</Badge>
@@ -337,6 +345,32 @@ export default function StationsPage() {
                                     ))}
                                 </tbody>
                             </table>
+
+                            {filteredStations.length > limit && (
+                                <div className="flex items-center justify-between mt-4 pt-4 border-t px-2">
+                                    <p className="text-sm text-gray-600">
+                                        Showing {(page - 1) * limit + 1} to {Math.min(page * limit, filteredStations.length)} of {filteredStations.length}
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={page === 1}
+                                            onClick={() => setPage(page - 1)}
+                                        >
+                                            Previous
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={page * limit >= filteredStations.length}
+                                            onClick={() => setPage(page + 1)}
+                                        >
+                                            Next
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </CardContent>

@@ -72,7 +72,7 @@ export default function OfficersPage() {
 
     const canCreateOfficer = user?.role === USER_ROLES.SUPER_ADMIN || user?.role === USER_ROLES.ADMIN_OFFICER;
     const canDeleteOfficer = user?.role === USER_ROLES.SUPER_ADMIN || user?.role === USER_ROLES.ADMIN_OFFICER;
-    const limit = 20;
+    const limit = 15;
 
     const fetchOfficers = async () => {
         try {
