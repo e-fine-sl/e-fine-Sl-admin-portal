@@ -106,10 +106,7 @@ export default function MapComponent({ position, onChange }: MapComponentProps) 
                     <StandaloneSearchBox
                         onLoad={onSearchBoxLoad}
                         onPlacesChanged={onPlacesChanged}
-                        options={{ bounds: new google.maps.LatLngBounds(
-                            new google.maps.LatLng(5.916667, 79.683333), // SW Sri Lanka
-                            new google.maps.LatLng(9.833333, 81.883333)  // NE Sri Lanka
-                        )}}
+                        options={{ bounds: { south: 5.916667, west: 79.683333, north: 9.833333, east: 81.883333 } }}
                     >
                         <div className="relative">
                             <input
@@ -125,7 +122,6 @@ export default function MapComponent({ position, onChange }: MapComponentProps) 
                 {position && (
                     <Marker
                         position={{ lat: position[0], lng: position[1] }}
-                        animation={google.maps.Animation.DROP}
                     />
                 )}
             </GoogleMap>

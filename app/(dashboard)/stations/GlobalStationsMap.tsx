@@ -42,7 +42,7 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export default function GlobalStationsMap({ stations, onEdit, onDelete, canManageStations }: GlobalStationsMapProps) {
     const { isLoaded, loadError } = useJsApiLoader({
-        id: 'google-map-script-global',
+        id: 'google-map-script',
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
         libraries,
     });
@@ -176,10 +176,7 @@ export default function GlobalStationsMap({ stations, onEdit, onDelete, canManag
                     <StandaloneSearchBox
                         onLoad={onSearchBoxLoad}
                         onPlacesChanged={onPlacesChanged}
-                        options={{ bounds: new google.maps.LatLngBounds(
-                            new google.maps.LatLng(5.916667, 79.683333), // SW Sri Lanka
-                            new google.maps.LatLng(9.833333, 81.883333)  // NE Sri Lanka
-                        )}}
+                        options={{ bounds: { south: 5.916667, west: 79.683333, north: 9.833333, east: 81.883333 } }}
                     >
                         <div className="relative group">
                             <input
@@ -267,7 +264,6 @@ export default function GlobalStationsMap({ stations, onEdit, onDelete, canManag
                             key={station._id}
                             position={{ lat, lng }}
                             onClick={() => setSelectedStation(station)}
-                            animation={google.maps.Animation.DROP}
                         />
                     );
                 })}
