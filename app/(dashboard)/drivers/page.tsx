@@ -10,9 +10,14 @@ import { formatDate } from '@/lib/utils';
 import { Search, ShieldOff, ShieldCheck, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { USER_ROLES } from '@/lib/constants';
+import { Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 export default function DriversPage() {
+    const { user } = useAuth();
+    const canDeleteDriver = user?.role === USER_ROLES.SUPER_ADMIN || user?.role === USER_ROLES.ADMIN_OFFICER;
     const [drivers, setDrivers] = useState<Driver[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -109,6 +114,23 @@ export default function DriversPage() {
                 ? '✓ License Activated — Driver has been notified by email'
                 : '✗ License Suspended — Driver has been notified by email'
         );
+    };
+
+    const handleDelete = async (id: string, name: string) => {
+        if (!confirm(`Are you sure you want to delete driver "${name}"? This action cannot be undone.`)) return;
+
+        try {
+            await api.delete(`/admin/drivers/${id}`);
+            toast.success('Driver deleted successfully');
+
+            if (drivers.length === 1 && page > 1) {
+                setPage(page - 1);
+            } else {
+                fetchDrivers();
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to delete driver');
+        }
     };
 
     return (
@@ -243,6 +265,17 @@ export default function DriversPage() {
                                                     >
                                                         <ShieldCheck className="h-4 w-4 mr-1" />
                                                         Activate Driver
+                                                    </Button>
+                                                )}
+                                                {canDeleteDriver && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="destructive"
+                                                        className="ml-2"
+                                                        title="Delete Driver"
+                                                        onClick={() => handleDelete(driver._id, driver.name)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 )}
                                             </td>

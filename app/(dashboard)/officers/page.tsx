@@ -71,7 +71,7 @@ export default function OfficersPage() {
     });
 
     const canCreateOfficer = user?.role === USER_ROLES.SUPER_ADMIN || user?.role === USER_ROLES.ADMIN_OFFICER;
-    const canDeleteOfficer = user?.role === USER_ROLES.SUPER_ADMIN;
+    const canDeleteOfficer = user?.role === USER_ROLES.SUPER_ADMIN || user?.role === USER_ROLES.ADMIN_OFFICER;
     const limit = 20;
 
     const fetchOfficers = async () => {
@@ -93,7 +93,7 @@ export default function OfficersPage() {
     const fetchStations = async () => {
         try {
             const response = await api.get('/stations');
-            setStations(response.data);
+            setStations(response.data.data);
         } catch (error) {
             console.error('Failed to fetch stations:', error);
         }
