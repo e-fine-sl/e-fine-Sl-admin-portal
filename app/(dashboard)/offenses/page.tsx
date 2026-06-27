@@ -46,7 +46,7 @@ export default function OffensesPage() {
     });
 
     const isSuperAdmin = user?.role === USER_ROLES.SUPER_ADMIN;
-    const limit = 20; // Items per page
+    const limit = 15; // Items per page
 
     const fetchOffenses = async () => {
         try {

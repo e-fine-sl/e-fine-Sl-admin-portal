@@ -42,6 +42,8 @@ export default function AdminsPage() {
     const { user } = useAuth();
     const [admins, setAdmins] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const limit = 15;
 
     // Edit/Delete State
     const [isEditMode, setIsEditMode] = useState(false);
@@ -310,7 +312,7 @@ export default function AdminsPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {admins.map((admin) => (
+                                    {admins.slice((page - 1) * limit, page * limit).map((admin) => (
                                         <tr key={admin._id || admin.id} className="border-b hover:bg-gray-50">
                                             <td className="px-4 py-3 font-medium text-gray-900">{admin.name}</td>
                                             <td className="px-4 py-3 text-gray-600">{admin.email}</td>
@@ -355,6 +357,32 @@ export default function AdminsPage() {
                                     ))}
                                 </tbody>
                             </table>
+
+                            {admins.length > limit && (
+                                <div className="flex items-center justify-between mt-4 pt-4 border-t px-2">
+                                    <p className="text-sm text-gray-600">
+                                        Showing {(page - 1) * limit + 1} to {Math.min(page * limit, admins.length)} of {admins.length}
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={page === 1}
+                                            onClick={() => setPage(page - 1)}
+                                        >
+                                            Previous
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={page * limit >= admins.length}
+                                            onClick={() => setPage(page + 1)}
+                                        >
+                                            Next
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </CardContent>

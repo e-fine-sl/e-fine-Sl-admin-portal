@@ -142,10 +142,10 @@ export default function PaymentsPage() {
                             )}
 
                             {/* Pagination */}
-                            {total > 20 && (
+                            {total > 15 && (
                                 <div className="flex items-center justify-between mt-4 pt-4 border-t">
                                     <p className="text-sm text-gray-600">
-                                        Showing {(page - 1) * 20 + 1} to {Math.min(page * 20, total)} of {total}
+                                        Showing {(page - 1) * 15 + 1} to {Math.min(page * 15, total)} of {total}
                                     </p>
                                     <div className="flex gap-2">
                                         <Button
@@ -159,7 +159,7 @@ export default function PaymentsPage() {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            disabled={page * 20 >= total}
+                                            disabled={page * 15 >= total}
                                             onClick={() => setPage(page + 1)}
                                         >
                                             Next

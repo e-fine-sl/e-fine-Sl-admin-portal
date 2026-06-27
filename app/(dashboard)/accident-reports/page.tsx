@@ -25,6 +25,8 @@ export default function AccidentReportsPage() {
   const [province, setProvince] = useState('all');
   const [district, setDistrict] = useState('all');
   const [status, setStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const limit = 15;
   
   // Dialog state
   const [selectedReport, setSelectedReport] = useState<AccidentReport | null>(null);
@@ -33,6 +35,7 @@ export default function AccidentReportsPage() {
 
   useEffect(() => {
     if (token) {
+      setPage(1);
       fetchStats();
       fetchReports();
     }
@@ -64,7 +67,7 @@ export default function AccidentReportsPage() {
     setLoading(true);
     try {
       const res = await api.get('/accident/reports', {
-        params: { province, district, status, limit: 50 }
+        params: { province, district, status, limit: 500 } // Fetch up to 500 for client-side pagination
       });
       if (res.data.success) setReports(res.data.data);
     } catch (err) {
@@ -246,7 +249,7 @@ export default function AccidentReportsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {reports.map((report) => (
+                {reports.slice((page - 1) * limit, page * limit).map((report) => (
                   <tr key={report._id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center">
@@ -282,6 +285,30 @@ export default function AccidentReportsPage() {
                 ))}
               </tbody>
             </table>
+
+            {reports.length > limit && (
+              <div className="flex items-center justify-between p-4 border-t border-gray-200">
+                  <p className="text-sm text-gray-600">
+                      Showing {(page - 1) * limit + 1} to {Math.min(page * limit, reports.length)} of {reports.length}
+                  </p>
+                  <div className="flex gap-2">
+                      <button
+                          className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-gray-50"
+                          disabled={page === 1}
+                          onClick={() => setPage(page - 1)}
+                      >
+                          Previous
+                      </button>
+                      <button
+                          className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-gray-50"
+                          disabled={page * limit >= reports.length}
+                          onClick={() => setPage(page + 1)}
+                      >
+                          Next
+                      </button>
+                  </div>
+              </div>
+            )}
           </div>
         )}
       </div>
