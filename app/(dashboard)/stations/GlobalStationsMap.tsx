@@ -6,7 +6,6 @@ import { Search, Building2, MapPin, Pencil, Trash2, Navigation, AlertCircle } fr
 import { PoliceStation } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface GlobalStationsMapProps {
     stations: PoliceStation[];
@@ -217,7 +216,7 @@ export default function GlobalStationsMap({ stations, onEdit, onDelete, canManag
                                     No police stations found within 30km of this location.
                                 </div>
                             ) : (
-                                <ScrollArea className="h-full max-h-[400px]">
+                                <div className="h-full max-h-[400px] overflow-y-auto overflow-x-hidden">
                                     <div className="divide-y divide-gray-100">
                                         {nearbyStations.map((item, idx) => (
                                             <div 
@@ -250,7 +249,7 @@ export default function GlobalStationsMap({ stations, onEdit, onDelete, canManag
                                             </div>
                                         ))}
                                     </div>
-                                </ScrollArea>
+                                </div>
                             )}
                         </div>
                     </div>
