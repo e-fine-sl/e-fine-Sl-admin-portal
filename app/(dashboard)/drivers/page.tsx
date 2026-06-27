@@ -245,39 +245,41 @@ export default function DriversPage() {
 
                                             {/* Action Icon Button */}
                                             <td className="px-4 py-3">
-                                                {driver.licenseStatus === 'ACTIVE' ? (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="destructive"
-                                                        title="Suspend License"
-                                                        onClick={() => openSuspendDialog(driver)}
-                                                    >
-                                                        <ShieldOff className="h-4 w-4 mr-1" />
-                                                        Suspend Driver
-                                                    </Button>
-                                                ) : (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="default"
-                                                        className="bg-green-600 hover:bg-green-700 text-white"
-                                                        title="Activate License"
-                                                        onClick={() => openActivateDialog(driver)}
-                                                    >
-                                                        <ShieldCheck className="h-4 w-4 mr-1" />
-                                                        Activate Driver
-                                                    </Button>
-                                                )}
-                                                {canDeleteDriver && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="destructive"
-                                                        className="ml-2"
-                                                        title="Delete Driver"
-                                                        onClick={() => handleDelete(driver._id, driver.name)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
+                                                <div className="flex items-center gap-2">
+                                                    {driver.licenseStatus === 'ACTIVE' ? (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="destructive"
+                                                            title="Suspend License"
+                                                            onClick={() => openSuspendDialog(driver)}
+                                                        >
+                                                            <ShieldOff className="h-4 w-4 mr-1" />
+                                                            Suspend
+                                                        </Button>
+                                                    ) : (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="default"
+                                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                                            title="Activate License"
+                                                            onClick={() => openActivateDialog(driver)}
+                                                        >
+                                                            <ShieldCheck className="h-4 w-4 mr-1" />
+                                                            Activate
+                                                        </Button>
+                                                    )}
+                                                    {canDeleteDriver && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="px-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                                                            title="Delete Driver"
+                                                            onClick={() => handleDelete(driver._id, driver.name)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
