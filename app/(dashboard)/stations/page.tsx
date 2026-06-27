@@ -24,7 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, Pencil, Building2, MapPin } from 'lucide-react';
+import { Plus, Trash2, Pencil, Building2, MapPin, Map, Table } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { USER_ROLES } from '@/lib/constants';
@@ -36,10 +36,16 @@ const DynamicMapComponent = dynamic(() => import('./MapComponent'), {
     loading: () => <div className="h-[300px] w-full bg-gray-100 animate-pulse rounded-md flex items-center justify-center text-gray-500">Loading Map...</div>
 });
 
+const DynamicGlobalMap = dynamic(() => import('./GlobalStationsMap'), {
+    ssr: false,
+    loading: () => <div className="h-[650px] w-full bg-gray-100 animate-pulse rounded-xl flex items-center justify-center text-gray-500 border border-gray-200">Loading Island-Wide Map...</div>
+});
+
 export default function StationsPage() {
     const { user } = useAuth();
     const [stations, setStations] = useState<PoliceStation[]>([]);
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'table' | 'map'>('table');
 
     const [filterProvince, setFilterProvince] = useState<string>('All');
     const [filterDistrict, setFilterDistrict] = useState<string>('All');
@@ -227,6 +233,25 @@ export default function StationsPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
+
+                            <div className="flex bg-gray-100/80 p-1 rounded-lg border border-gray-200 sm:ml-2">
+                                <Button
+                                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setViewMode('table')}
+                                    className={`px-3 py-1 h-8 rounded-md transition-all ${viewMode === 'table' ? 'shadow-sm bg-white text-gray-900 hover:bg-white border border-gray-200' : 'text-gray-500 hover:text-gray-900'}`}
+                                >
+                                    <Table className="h-4 w-4 mr-1.5" /> Table
+                                </Button>
+                                <Button
+                                    variant={viewMode === 'map' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setViewMode('map')}
+                                    className={`px-3 py-1 h-8 rounded-md transition-all ${viewMode === 'map' ? 'shadow-sm bg-white text-gray-900 hover:bg-white border border-gray-200' : 'text-gray-500 hover:text-gray-900'}`}
+                                >
+                                    <Map className="h-4 w-4 mr-1.5" /> Map
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </CardHeader>
@@ -240,8 +265,20 @@ export default function StationsPage() {
                             <p>No police stations found.</p>
                             {canManageStations && <p className="text-sm mt-2">Use the "Add Station" button to register one.</p>}
                         </div>
+                    ) : viewMode === 'map' ? (
+                        <div className="pt-2 animate-in fade-in duration-300">
+                            <DynamicGlobalMap
+                                stations={filteredStations}
+                                onEdit={handleOpenEditDialog}
+                                onDelete={(id) => {
+                                    setSelectedStationId(id);
+                                    setIsDeleteDialogOpen(true);
+                                }}
+                                canManageStations={canManageStations}
+                            />
+                        </div>
                     ) : (
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto animate-in fade-in duration-300">
                             <table className="w-full text-sm text-left">
                                 <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
                                     <tr>
