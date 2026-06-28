@@ -12,12 +12,19 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { USER_ROLES } from '@/lib/constants';
-import { Trash2 } from 'lucide-react';
+import { Trash2, FileText } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 export default function DriversPage() {
     const { user } = useAuth();
-    const canDeleteDriver = user?.role === USER_ROLES.SUPER_ADMIN || user?.role === USER_ROLES.ADMIN_OFFICER;
+    const canDeleteDriver = user?.role === USER_ROLES.SUPER_ADMIN;
     const [drivers, setDrivers] = useState<Driver[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -37,6 +44,39 @@ export default function DriversPage() {
         driverId: string;
         newStatus: 'ACTIVE' | 'SUSPENDED';
     } | null>(null);
+
+    // Fines modal state
+    const [isFinesModalOpen, setIsFinesModalOpen] = useState(false);
+    const [selectedDriverFines, setSelectedDriverFines] = useState<any[]>([]);
+    const [isFinesLoading, setIsFinesLoading] = useState(false);
+    const [selectedDriverName, setSelectedDriverName] = useState('');
+
+    const openFinesModal = async (driver: Driver) => {
+        setSelectedDriverName(driver.name);
+        setIsFinesModalOpen(true);
+        setIsFinesLoading(true);
+        try {
+            const response = await api.get('/admin/fines', {
+                params: { search: driver.licenseNumber, limit: 100 }
+            });
+            setSelectedDriverFines(response.data.data || []);
+        } catch (error) {
+            toast.error('Failed to load fines for this driver');
+        } finally {
+            setIsFinesLoading(false);
+        }
+    };
+
+    const handleDeleteFine = async (fineId: string) => {
+        if (!confirm('Are you sure you want to delete this fine? This action cannot be undone.')) return;
+        try {
+            await api.delete(`/admin/fines/${fineId}`);
+            toast.success('Fine deleted successfully');
+            setSelectedDriverFines(prev => prev.filter(f => f._id !== fineId));
+        } catch (error) {
+            toast.error('Failed to delete fine');
+        }
+    };
 
     const fetchDrivers = async () => {
         try {
@@ -268,6 +308,17 @@ export default function DriversPage() {
                                                             Activate
                                                         </Button>
                                                     )}
+                                                    
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="outline" 
+                                                        className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200" 
+                                                        onClick={() => openFinesModal(driver)} 
+                                                        title="View Fines"
+                                                    >
+                                                        <FileText className="h-4 w-4 mr-1"/> Fines
+                                                    </Button>
+
                                                     {canDeleteDriver && (
                                                         <Button
                                                             size="sm"
@@ -338,6 +389,76 @@ export default function DriversPage() {
                     onConfirm={handleStatusChange}
                 />
             )}
+
+            {/* Fines Viewer Dialog */}
+            <Dialog open={isFinesModalOpen} onOpenChange={setIsFinesModalOpen}>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl">
+                            Fine History: <span className="text-blue-600">{selectedDriverName}</span>
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-4">
+                        {isFinesLoading ? (
+                            <div className="flex justify-center py-12">
+                                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        ) : selectedDriverFines.length === 0 ? (
+                            <div className="text-center py-12 text-gray-500 border-2 border-dashed rounded-lg bg-gray-50">
+                                <p>No fines found for this driver.</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto border rounded-lg">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-gray-100 border-b text-gray-600">
+                                        <tr>
+                                            <th className="px-4 py-3 font-medium">Date</th>
+                                            <th className="px-4 py-3 font-medium">Offense</th>
+                                            <th className="px-4 py-3 font-medium">Location</th>
+                                            <th className="px-4 py-3 font-medium">Amount</th>
+                                            <th className="px-4 py-3 font-medium">Status</th>
+                                            {user?.role === USER_ROLES.SUPER_ADMIN && (
+                                                <th className="px-4 py-3 font-medium text-right">Action</th>
+                                            )}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {selectedDriverFines.map(fine => (
+                                            <tr key={fine._id} className="hover:bg-gray-50">
+                                                <td className="px-4 py-3 whitespace-nowrap">{formatDate(fine.date)}</td>
+                                                <td className="px-4 py-3">{fine.offenseName}</td>
+                                                <td className="px-4 py-3 text-gray-600">{fine.place}</td>
+                                                <td className="px-4 py-3 font-semibold">Rs. {fine.amount}</td>
+                                                <td className="px-4 py-3">
+                                                    <Badge 
+                                                        className={fine.status === 'PAID' ? 'bg-emerald-900 hover:bg-emerald-800 text-white' : ''}
+                                                        variant={fine.status === 'PAID' ? 'default' : 'destructive'}
+                                                    >
+                                                        {fine.status}
+                                                    </Badge>
+                                                </td>
+                                                {user?.role === USER_ROLES.SUPER_ADMIN && (
+                                                    <td className="px-4 py-3 text-right">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="text-red-600 hover:bg-red-50 hover:text-red-700 h-8 w-8 p-0"
+                                                            title="Delete Fine"
+                                                            onClick={() => handleDeleteFine(fine._id)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </td>
+                                                )}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
