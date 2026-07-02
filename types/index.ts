@@ -209,6 +209,15 @@ export interface AccidentStatsResponse {
     };
 }
 
+export interface NearbyOfficer {
+    name: string;
+    badgeNumber: string;
+    isActive: boolean;
+    hasValidToken: boolean;
+    lastLogoutTime?: string;
+    policeStation?: string;
+}
+
 // SL Geo Constants for Admin Filters
 export const SL_PROVINCES = [
     'Western', 'Central', 'Southern', 'Northern', 'Eastern',

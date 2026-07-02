@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import api, { API_URL } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useSocket } from '@/context/SocketContext';
-import { AccidentReport, AccidentStatsResponse, SL_PROVINCES, SL_DISTRICTS } from '@/types';
+import { AccidentReport, AccidentStatsResponse, SL_PROVINCES, SL_DISTRICTS, NearbyOfficer } from '@/types';
 import { ACCIDENT_STATUSES, ACCIDENT_TYPE_ICONS } from '@/lib/constants';
-import { Activity, CheckCircle, MapPin, Search, Eye, AlertCircle, Clock } from 'lucide-react';
+import { Activity, CheckCircle, MapPin, Search, Eye, AlertCircle, Clock, Bell } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,12 @@ export default function AccidentReportsPage() {
   const [selectedReport, setSelectedReport] = useState<AccidentReport | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isUpdateLoading, setIsUpdateLoading] = useState(false);
+
+  // Manual Notification state
+  const [isNotifyOfficersOpen, setIsNotifyOfficersOpen] = useState(false);
+  const [nearbyOfficers, setNearbyOfficers] = useState<NearbyOfficer[]>([]);
+  const [isOfficersLoading, setIsOfficersLoading] = useState(false);
+  const [isSendingPush, setIsSendingPush] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -117,6 +123,62 @@ export default function AccidentReportsPage() {
       alert(err.response?.data?.message || 'Failed to notify division');
     } finally {
       setIsUpdateLoading(false);
+    }
+  };
+
+  const handleFetchNearbyOfficers = async (reportId: string) => {
+    setIsOfficersLoading(true);
+    setNearbyOfficers([]);
+    setIsNotifyOfficersOpen(true);
+    
+    try {
+      const res = await api.get(`/accident/reports/${reportId}/nearby-officers`);
+      if (res.data.success) {
+        setNearbyOfficers(res.data.data);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch nearby officers', err);
+      alert(err.response?.data?.message || 'Failed to fetch nearby officers');
+      setIsNotifyOfficersOpen(false);
+    } finally {
+      setIsOfficersLoading(false);
+    }
+  };
+
+  const handleSendPushNotification = async () => {
+    if (!selectedReport) return;
+    
+    const validOfficers = nearbyOfficers.filter(o => o.hasValidToken);
+    if (validOfficers.length === 0) {
+      alert('None of the nearby officers have a valid push token.');
+      return;
+    }
+
+    if (!confirm(`Send push notification to ${validOfficers.length} officer(s)?`)) return;
+
+    setIsSendingPush(true);
+    try {
+      const badgeNumbers = validOfficers.map(o => o.badgeNumber);
+      const res = await api.post(`/accident/reports/${selectedReport._id}/notify-officers`, {
+        adminName: user?.name,
+        badgeNumbers
+      });
+
+      if (res.data.success) {
+        alert(res.data.message);
+        setIsNotifyOfficersOpen(false);
+        // Refresh the selected report to update the officersNotified count and history
+        const refreshedReportRes = await api.get(`/accident/reports/${selectedReport._id}`);
+        if (refreshedReportRes.data.success) {
+           setSelectedReport(refreshedReportRes.data.data);
+           setReports(reports.map(r => r._id === selectedReport._id ? refreshedReportRes.data.data : r));
+        }
+      }
+    } catch (err: any) {
+      console.error('Failed to send push notification', err);
+      alert(err.response?.data?.message || 'Failed to send push notification');
+    } finally {
+      setIsSendingPush(false);
     }
   };
 
@@ -394,13 +456,23 @@ export default function AccidentReportsPage() {
               <div className="border rounded-lg p-4">
                 <h4 className="text-sm font-semibold text-gray-500 uppercase mb-3 flex justify-between items-center">
                   System Actions
-                  <button 
-                    onClick={() => handleNotifyDivision(selectedReport._id)}
-                    disabled={isUpdateLoading}
-                    className="text-xs bg-gray-900 text-white px-3 py-1 rounded hover:bg-gray-800 disabled:opacity-50"
-                  >
-                    Manually Notify Division
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleFetchNearbyOfficers(selectedReport._id)}
+                      disabled={isUpdateLoading}
+                      className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 disabled:opacity-50 flex items-center"
+                    >
+                      <Bell className="h-3 w-3 mr-1" />
+                      Notify Nearby Officers
+                    </button>
+                    <button 
+                      onClick={() => handleNotifyDivision(selectedReport._id)}
+                      disabled={isUpdateLoading}
+                      className="text-xs bg-gray-900 text-white px-3 py-1 rounded hover:bg-gray-800 disabled:opacity-50"
+                    >
+                      Manually Notify Division
+                    </button>
+                  </div>
                 </h4>
                 <ul className="text-sm space-y-2 text-gray-700">
                   <li className="flex items-center">
@@ -449,6 +521,95 @@ export default function AccidentReportsPage() {
 
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      {/* Notify Officers Dialog */}
+      <Dialog open={isNotifyOfficersOpen} onOpenChange={setIsNotifyOfficersOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Nearby Officers</DialogTitle>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            {isOfficersLoading ? (
+              <div className="p-8 text-center text-gray-500">Scanning 5km radius for officers...</div>
+            ) : nearbyOfficers.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <AlertCircle className="h-10 w-10 text-yellow-500 mx-auto mb-3" />
+                <p className="font-medium text-gray-900">No officers found</p>
+                <p className="text-sm mt-1">There are no active or recently active (grace window) officers within 5km of this accident.</p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Found {nearbyOfficers.length} officer(s) near the accident location. 
+                  Officers without valid device tokens cannot receive push notifications.
+                </p>
+                
+                <div className="border rounded-lg overflow-hidden max-h-96 overflow-y-auto mb-4">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="p-3 font-medium text-gray-500">Officer</th>
+                        <th className="p-3 font-medium text-gray-500">Status</th>
+                        <th className="p-3 font-medium text-gray-500">Push Token</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {nearbyOfficers.map(officer => (
+                        <tr key={officer.badgeNumber}>
+                          <td className="p-3">
+                            <p className="font-medium">{officer.name}</p>
+                            <p className="text-xs text-gray-500">{officer.badgeNumber}</p>
+                          </td>
+                          <td className="p-3">
+                            {officer.isActive ? (
+                              <span className="inline-flex items-center text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-full">
+                                <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5"></span>
+                                Active Now
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center text-xs font-medium text-yellow-800 bg-yellow-50 px-2 py-1 rounded-full">
+                                <Clock className="w-3 h-3 mr-1 text-yellow-600" />
+                                Grace Window
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            {officer.hasValidToken ? (
+                              <span className="text-green-600 text-xs font-medium flex items-center">
+                                <CheckCircle className="w-3 h-3 mr-1" /> Valid
+                              </span>
+                            ) : (
+                              <span className="text-red-500 text-xs font-medium flex items-center">
+                                <AlertCircle className="w-3 h-3 mr-1" /> Invalid
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => setIsNotifyOfficersOpen(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSendPushNotification}
+                    disabled={isSendingPush || nearbyOfficers.filter(o => o.hasValidToken).length === 0}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 flex items-center"
+                  >
+                    {isSendingPush ? 'Sending...' : `Send Push Notification (${nearbyOfficers.filter(o => o.hasValidToken).length})`}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
