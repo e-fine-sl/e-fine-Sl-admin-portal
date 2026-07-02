@@ -17,6 +17,7 @@ export default function SystemConfigPage() {
     const [saving, setSaving] = useState(false);
     
     const [radius, setRadius] = useState<number>(10);
+    const [gracePeriod, setGracePeriod] = useState<number>(20);
 
     const canEdit = user?.role === USER_ROLES.SUPER_ADMIN;
 
@@ -29,8 +30,9 @@ export default function SystemConfigPage() {
             setLoading(true);
             const response = await api.get('/admin/system-config');
             const data = response.data.data ? response.data.data : response.data;
-            if (data && data.accidentNotificationRadiusKm) {
-                setRadius(data.accidentNotificationRadiusKm);
+            if (data) {
+                if (data.accidentNotificationRadiusKm) setRadius(data.accidentNotificationRadiusKm);
+                if (data.officerLogoutGracePeriodMinutes) setGracePeriod(data.officerLogoutGracePeriodMinutes);
             }
         } catch (error) {
             console.error('Failed to fetch system config:', error);
@@ -48,10 +50,16 @@ export default function SystemConfigPage() {
             return;
         }
 
+        if (!gracePeriod || gracePeriod < 5 || gracePeriod > 120) {
+            toast.error('Grace period must be between 5 and 120 minutes');
+            return;
+        }
+
         try {
             setSaving(true);
             await api.put('/admin/system-config', {
-                accidentNotificationRadiusKm: radius
+                accidentNotificationRadiusKm: radius,
+                officerLogoutGracePeriodMinutes: gracePeriod
             });
             toast.success('System configuration saved successfully');
         } catch (error: any) {
@@ -105,6 +113,27 @@ export default function SystemConfigPage() {
                                         className="w-32"
                                     />
                                     <span className="font-medium text-gray-700">Kilometers</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 pt-4 border-t border-gray-100">
+                                <Label htmlFor="gracePeriod">Officer Logout Grace Period (Minutes)</Label>
+                                <div className="flex flex-col gap-1 text-sm text-gray-500 mb-2">
+                                    <p>Determines how long an officer is considered "nearby" after they log out of the mobile app.</p>
+                                    <p>Officers who logged out within this time window will still receive push notifications for accidents near their last known location.</p>
+                                </div>
+                                <div className="flex items-center gap-3 max-w-md">
+                                    <Input
+                                        id="gracePeriod"
+                                        type="number"
+                                        min="5"
+                                        max="120"
+                                        value={gracePeriod}
+                                        onChange={(e) => setGracePeriod(parseInt(e.target.value))}
+                                        disabled={!canEdit}
+                                        className="w-32"
+                                    />
+                                    <span className="font-medium text-gray-700">Minutes</span>
                                 </div>
                             </div>
 
