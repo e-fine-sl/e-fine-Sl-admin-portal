@@ -563,15 +563,22 @@ export default function AccidentReportsPage() {
                             <p className="text-xs text-gray-500">{officer.badgeNumber}</p>
                           </td>
                           <td className="p-3">
-                            {officer.isActive ? (
+                            {officer.status === 'ACTIVE' && (
                               <span className="inline-flex items-center text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-full">
                                 <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5"></span>
                                 Active Now
                               </span>
-                            ) : (
+                            )}
+                            {officer.status === 'BACKGROUND' && (
                               <span className="inline-flex items-center text-xs font-medium text-yellow-800 bg-yellow-50 px-2 py-1 rounded-full">
                                 <Clock className="w-3 h-3 mr-1 text-yellow-600" />
-                                Grace Window
+                                Background (Idle)
+                              </span>
+                            )}
+                            {officer.status === 'LOGGED_OUT_GRACE' && (
+                              <span className="inline-flex items-center text-xs font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
+                                <Clock className="w-3 h-3 mr-1 text-gray-500" />
+                                Logged Out (Grace Window)
                               </span>
                             )}
                           </td>

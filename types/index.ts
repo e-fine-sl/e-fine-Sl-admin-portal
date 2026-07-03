@@ -212,6 +212,7 @@ export interface AccidentStatsResponse {
 export interface NearbyOfficer {
     name: string;
     badgeNumber: string;
+    status: 'ACTIVE' | 'BACKGROUND' | 'LOGGED_OUT_GRACE';
     isActive: boolean;
     hasValidToken: boolean;
     lastLogoutTime?: string;
