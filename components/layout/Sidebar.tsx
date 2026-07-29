@@ -54,12 +54,12 @@ export function Sidebar() {
     return (
         <div className="flex h-full w-64 shrink-0 flex-col bg-gray-900 text-white">
             {/* Logo */}
-            <div className="flex h-16 items-center justify-center border-b border-gray-800">
+            <div className="flex h-16 shrink-0 items-center justify-center border-b border-gray-800">
                 <h1 className="text-xl font-bold">e-Fine SL Admin</h1>
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 space-y-1 px-3 py-4">
+            <nav className="flex-1 overflow-y-auto space-y-1 px-3 py-4">
                 {navigation.map((item) => {
                     const isActive = pathname === item.href;
                     return (
@@ -109,7 +109,7 @@ export function Sidebar() {
             </nav>
 
             {/* User Section */}
-            <div className="border-t border-gray-800 p-4">
+            <div className="shrink-0 border-t border-gray-800 p-4">
                 <div className="mb-3">
                     <p className="text-sm font-medium">{user?.name}</p>
                     <p className="text-xs text-gray-400">{user?.email}</p>
