@@ -52,7 +52,7 @@ export function Sidebar() {
     ];
 
     return (
-        <div className="flex h-screen w-64 flex-col bg-gray-900 text-white">
+        <div className="flex h-full w-64 shrink-0 flex-col bg-gray-900 text-white">
             {/* Logo */}
             <div className="flex h-16 items-center justify-center border-b border-gray-800">
                 <h1 className="text-xl font-bold">e-Fine SL Admin</h1>
