@@ -141,6 +141,22 @@ export interface ApiResponse<T> {
     pages?: number;
 }
 
+// System Config Types
+export interface SystemConfig {
+    _id: string;
+    // Notification / Officer Settings
+    accidentNotificationRadiusKm: number;
+    officerLogoutGracePeriodMinutes: number;
+    // Demerit System Values
+    defaultDemeritPoints: number;
+    monthlyRecoveryPoints: number;
+    recoveryPeriodMonths: number;
+    recoveryEnabled: boolean;
+    lastRecoveryRunAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
 // Report Types
 export interface MonthlyReportData {
     month: number;
