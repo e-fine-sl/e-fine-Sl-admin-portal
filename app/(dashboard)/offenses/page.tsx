@@ -51,7 +51,7 @@ export default function OffensesPage() {
     const fetchOffenses = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/fines/offenses');
+            const response = await api.get('/admin/fines/offenses').catch(() => api.get('/fines/offenses'));
 
             // Handle both paginated and non-paginated responses
             if (Array.isArray(response.data)) {
@@ -146,13 +146,14 @@ export default function OffensesPage() {
                 toast.success('Offense type updated successfully');
             } else {
                 // Create new offense
-                await api.post('/fines/add', {
+                const payload = {
                     offenseName: formData.offenseName,
                     amount: Number(formData.amount),
                     description: formData.description,
                     sectionOfAct: formData.sectionOfAct,
                     demeritValue: Number(formData.demeritValue)
-                });
+                };
+                await api.post('/admin/fines/offenses', payload).catch(() => api.post('/fines/add', payload));
                 toast.success('Offense type created successfully');
             }
 
