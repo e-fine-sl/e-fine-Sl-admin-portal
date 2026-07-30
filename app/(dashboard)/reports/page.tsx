@@ -48,16 +48,26 @@ export default function ReportsPage() {
     const [province, setProvince] = useState('ALL');
     const [district, setDistrict] = useState('ALL');
 
-    // Target Query States
+    // Target Query Input States
     const [driverScope, setDriverScope] = useState<'individual' | 'nationwide'>('individual');
     const [licenseNumber, setLicenseNumber] = useState('');
     const [vehicleNumber, setVehicleNumber] = useState('');
     const [policeOfficerId, setPoliceOfficerId] = useState('');
 
-    // Pre-validation States
+    // Pre-validation Driver States
     const [verifyingDriver, setVerifyingDriver] = useState(false);
     const [verifiedDriver, setVerifiedDriver] = useState<any>(null);
     const [verificationError, setVerificationError] = useState<string | null>(null);
+
+    // Pre-validation Vehicle States
+    const [verifyingVehicle, setVerifyingVehicle] = useState(false);
+    const [verifiedVehicle, setVerifiedVehicle] = useState<any>(null);
+    const [vehicleVerificationError, setVehicleVerificationError] = useState<string | null>(null);
+
+    // Pre-validation Officer States
+    const [verifyingOfficer, setVerifyingOfficer] = useState(false);
+    const [verifiedOfficer, setVerifiedOfficer] = useState<any>(null);
+    const [officerVerificationError, setOfficerVerificationError] = useState<string | null>(null);
 
     // Available Districts based on Province
     const availableDistricts = province !== 'ALL' && DISTRICTS_MAP[province] ? DISTRICTS_MAP[province] : [];
@@ -68,7 +78,7 @@ export default function ReportsPage() {
         setDistrict('ALL');
     };
 
-    // Pre-validate driver in database
+    // 1. Pre-validate Driver Search
     const handleVerifyDriver = async () => {
         if (!licenseNumber.trim()) {
             toast.error('Please enter a driving license number to search');
@@ -91,6 +101,58 @@ export default function ReportsPage() {
             toast.error(errMsg);
         } finally {
             setVerifyingDriver(false);
+        }
+    };
+
+    // 2. Pre-validate Vehicle Search
+    const handleVerifyVehicle = async () => {
+        if (!vehicleNumber.trim()) {
+            toast.error('Please enter a vehicle registration plate number to search');
+            return;
+        }
+        try {
+            setVerifyingVehicle(true);
+            setVehicleVerificationError(null);
+            setVerifiedVehicle(null);
+            const res = await api.post('/admin/reports/verify-vehicle', {
+                vehicleNumber: vehicleNumber.trim()
+            });
+            if (res.data.success) {
+                setVerifiedVehicle(res.data.vehicle);
+                toast.success(`Vehicle Verified: ${res.data.vehicle.vehicleNumber}`);
+            }
+        } catch (error: any) {
+            const errMsg = error.response?.data?.message || 'Vehicle search failed';
+            setVehicleVerificationError(errMsg);
+            toast.error(errMsg);
+        } finally {
+            setVerifyingVehicle(false);
+        }
+    };
+
+    // 3. Pre-validate Police Officer Search
+    const handleVerifyOfficer = async () => {
+        if (!policeOfficerId.trim()) {
+            toast.error('Please enter Police Officer Badge Number or ID to search');
+            return;
+        }
+        try {
+            setVerifyingOfficer(true);
+            setOfficerVerificationError(null);
+            setVerifiedOfficer(null);
+            const res = await api.post('/admin/reports/verify-officer', {
+                policeOfficerId: policeOfficerId.trim()
+            });
+            if (res.data.success) {
+                setVerifiedOfficer(res.data.officer);
+                toast.success(`Officer Verified: ${res.data.officer.name}`);
+            }
+        } catch (error: any) {
+            const errMsg = error.response?.data?.message || 'Officer search failed';
+            setOfficerVerificationError(errMsg);
+            toast.error(errMsg);
+        } finally {
+            setVerifyingOfficer(false);
         }
     };
 
@@ -184,10 +246,11 @@ export default function ReportsPage() {
 
     // Generate Vehicle Violations Report
     const generateVehicleReport = async () => {
-        if (!vehicleNumber.trim()) {
-            toast.error('Please enter a vehicle registration number');
+        if (!verifiedVehicle) {
+            toast.error('Please search and verify the vehicle registration plate number before generating report.');
             return;
         }
+
         try {
             setLoading(true);
             const response = await api.post('/admin/reports/vehicle-violations', {
@@ -210,10 +273,11 @@ export default function ReportsPage() {
 
     // Generate Officer Performance Report
     const generateOfficerReport = async () => {
-        if (!policeOfficerId.trim()) {
-            toast.error('Please enter Police Officer Badge Number');
+        if (!verifiedOfficer) {
+            toast.error('Please search and verify the police officer badge ID before generating report.');
             return;
         }
+
         try {
             setLoading(true);
             const response = await api.post('/admin/reports/officer-performance', {
@@ -338,39 +402,123 @@ export default function ReportsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
 
-                    {/* VEHICLE SPECIFIC OPTIONS */}
+                    {/* SECTION 1: VEHICLE CITATION PRE-VALIDATION */}
                     {reportType === 'vehicle' && (
                         <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
                             <label className="block text-sm font-semibold text-slate-800">
-                                Vehicle License Plate Number
+                                Search & Verify Vehicle Registration Plate Number
                             </label>
-                            <input
-                                type="text"
-                                placeholder="Enter Vehicle Registration Number (e.g., WP CAS-1234 or CAD-5678)"
-                                value={vehicleNumber}
-                                onChange={(e) => setVehicleNumber(e.target.value)}
-                                className="w-full px-4 py-2 border rounded-md uppercase font-mono text-sm shadow-sm"
-                            />
+                            <div className="flex gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="Enter Vehicle Plate Number (e.g., WP CAS-1234)"
+                                    value={vehicleNumber}
+                                    onChange={(e) => {
+                                        setVehicleNumber(e.target.value);
+                                        setVerifiedVehicle(null);
+                                        setVehicleVerificationError(null);
+                                    }}
+                                    className="flex-1 px-4 py-2 border rounded-md uppercase font-mono text-sm shadow-sm focus:ring-2 focus:ring-purple-500"
+                                />
+                                <Button
+                                    type="button"
+                                    onClick={handleVerifyVehicle}
+                                    disabled={verifyingVehicle || !vehicleNumber.trim()}
+                                    className="bg-purple-700 hover:bg-purple-800 text-white"
+                                >
+                                    {verifyingVehicle ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            <Search className="h-4 w-4 mr-2" />
+                                            Search & Verify Vehicle
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+
+                            {/* Vehicle Verification Success Box */}
+                            {verifiedVehicle && (
+                                <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-md flex items-start gap-3">
+                                    <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5" />
+                                    <div className="text-sm">
+                                        <div className="font-bold text-emerald-900">Vehicle Verified: {verifiedVehicle.vehicleNumber}</div>
+                                        <div className="text-emerald-700 text-xs mt-1">
+                                            Total Citations: <span className="font-bold">{verifiedVehicle.totalViolations}</span> | Paid: <span className="font-bold text-emerald-800">{verifiedVehicle.paidCount}</span> | Unpaid: <span className="font-bold text-red-700">{verifiedVehicle.unpaidCount}</span> | Total Liability: <span className="font-bold">LKR {verifiedVehicle.totalFineValue.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Vehicle Verification Error Alert */}
+                            {vehicleVerificationError && (
+                                <div className="bg-red-50 border border-red-300 p-4 rounded-md flex items-center gap-3 text-red-800 text-sm">
+                                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                                    <span>{vehicleVerificationError}</span>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* OFFICER SPECIFIC OPTIONS */}
+                    {/* SECTION 2: POLICE OFFICER PRE-VALIDATION */}
                     {reportType === 'officer' && (
                         <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
                             <label className="block text-sm font-semibold text-slate-800">
-                                Police Officer Badge Number / ID
+                                Search & Verify Police Officer Badge Number / ID
                             </label>
-                            <input
-                                type="text"
-                                placeholder="Enter Police Badge ID (e.g., Officer-001 or POL-9921)"
-                                value={policeOfficerId}
-                                onChange={(e) => setPoliceOfficerId(e.target.value)}
-                                className="w-full px-4 py-2 border rounded-md font-mono text-sm shadow-sm"
-                            />
+                            <div className="flex gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="Enter Police Officer Badge ID (e.g., Officer-001 or POL-9921)"
+                                    value={policeOfficerId}
+                                    onChange={(e) => {
+                                        setPoliceOfficerId(e.target.value);
+                                        setVerifiedOfficer(null);
+                                        setOfficerVerificationError(null);
+                                    }}
+                                    className="flex-1 px-4 py-2 border rounded-md font-mono text-sm shadow-sm focus:ring-2 focus:ring-indigo-500"
+                                />
+                                <Button
+                                    type="button"
+                                    onClick={handleVerifyOfficer}
+                                    disabled={verifyingOfficer || !policeOfficerId.trim()}
+                                    className="bg-indigo-700 hover:bg-indigo-800 text-white"
+                                >
+                                    {verifyingOfficer ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            <Search className="h-4 w-4 mr-2" />
+                                            Search & Verify Officer
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+
+                            {/* Officer Verification Success Box */}
+                            {verifiedOfficer && (
+                                <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-md flex items-start gap-3">
+                                    <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5" />
+                                    <div className="text-sm">
+                                        <div className="font-bold text-emerald-900">{verifiedOfficer.name} ({verifiedOfficer.badgeNumber})</div>
+                                        <div className="text-emerald-700 text-xs mt-1">
+                                            Station: <span className="font-bold">{verifiedOfficer.policeStation}</span> | Rank: <span className="font-bold">{verifiedOfficer.position}</span> | Issued Citations: <span className="font-bold">{verifiedOfficer.totalIssued}</span> | Revenue: <span className="font-bold">LKR {verifiedOfficer.totalRevenue.toLocaleString()}</span> ({verifiedOfficer.settlementRate}% Settled)
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Officer Verification Error Alert */}
+                            {officerVerificationError && (
+                                <div className="bg-red-50 border border-red-300 p-4 rounded-md flex items-center gap-3 text-red-800 text-sm">
+                                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                                    <span>{officerVerificationError}</span>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* DRIVER REPORT SPECIFIC OPTIONS */}
+                    {/* SECTION 3: DRIVER REPORT SPECIFIC OPTIONS */}
                     {reportType === 'driver' && (
                         <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
                             <label className="block text-sm font-semibold text-slate-800">
@@ -430,13 +578,13 @@ export default function ReportsPage() {
                                             ) : (
                                                 <>
                                                     <Search className="h-4 w-4 mr-2" />
-                                                    Search & Verify
+                                                    Search & Verify Driver
                                                 </>
                                             )}
                                         </Button>
                                     </div>
 
-                                    {/* Verification Success Box */}
+                                    {/* Driver Verification Success Box */}
                                     {verifiedDriver && (
                                         <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-md flex items-start gap-3">
                                             <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5" />
@@ -449,7 +597,7 @@ export default function ReportsPage() {
                                         </div>
                                     )}
 
-                                    {/* Verification Error Alert */}
+                                    {/* Driver Verification Error Alert */}
                                     {verificationError && (
                                         <div className="bg-red-50 border border-red-300 p-4 rounded-md flex items-center gap-3 text-red-800 text-sm">
                                             <AlertTriangle className="h-5 w-5 text-red-600" />
@@ -607,8 +755,13 @@ export default function ReportsPage() {
                     <div className="flex justify-end pt-2">
                         <Button
                             onClick={handleGenerateReport}
-                            disabled={loading || (reportType === 'driver' && driverScope === 'individual' && !verifiedDriver)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 text-base font-semibold shadow-md"
+                            disabled={
+                                loading || 
+                                (reportType === 'driver' && driverScope === 'individual' && !verifiedDriver) ||
+                                (reportType === 'vehicle' && !verifiedVehicle) ||
+                                (reportType === 'officer' && !verifiedOfficer)
+                            }
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 text-base font-semibold shadow-md disabled:bg-slate-300 disabled:text-slate-500 cursor-pointer disabled:cursor-not-allowed"
                         >
                             {loading ? (
                                 <>
