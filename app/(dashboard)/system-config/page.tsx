@@ -38,6 +38,7 @@ const DEFAULTS: Omit<SystemConfig, '_id' | 'createdAt' | 'updatedAt'> = {
     defaultDemeritPoints: 24,
     monthlyRecoveryPoints: 2,
     recoveryPeriodMonths: 1,
+    cleanRecordDays: 30,
     recoveryEnabled: true,
     lastRecoveryRunAt: null,
 };
@@ -91,6 +92,7 @@ export default function SystemConfigPage() {
     // ── Demerit settings state ────────────────────────────────────────────
     const [recoveryPoints,  setRecoveryPoints]  = useState<number>(DEFAULTS.monthlyRecoveryPoints);
     const [recoveryPeriod,  setRecoveryPeriod]  = useState<number>(DEFAULTS.recoveryPeriodMonths);
+    const [cleanRecordDays, setCleanRecordDays] = useState<number>(DEFAULTS.cleanRecordDays);
     const [recoveryEnabled, setRecoveryEnabled] = useState<boolean>(DEFAULTS.recoveryEnabled);
     const [lastRunAt,       setLastRunAt]       = useState<string | null>(DEFAULTS.lastRecoveryRunAt);
     const [defaultPoints,   setDefaultPoints]   = useState<number>(DEFAULTS.defaultDemeritPoints);
@@ -107,6 +109,7 @@ export default function SystemConfigPage() {
                 setGracePeriod(data.officerLogoutGracePeriodMinutes ?? DEFAULTS.officerLogoutGracePeriodMinutes);
                 setRecoveryPoints(data.monthlyRecoveryPoints         ?? DEFAULTS.monthlyRecoveryPoints);
                 setRecoveryPeriod(data.recoveryPeriodMonths          ?? DEFAULTS.recoveryPeriodMonths);
+                setCleanRecordDays(data.cleanRecordDays              ?? DEFAULTS.cleanRecordDays);
                 setRecoveryEnabled(data.recoveryEnabled              ?? DEFAULTS.recoveryEnabled);
                 setLastRunAt(data.lastRecoveryRunAt                  ?? null);
                 setDefaultPoints(data.defaultDemeritPoints           ?? DEFAULTS.defaultDemeritPoints);
@@ -166,14 +169,16 @@ export default function SystemConfigPage() {
             toast.error('Recovery period must be between 1 and 12 months');
             return;
         }
+        if (!Number.isInteger(cleanRecordDays) || cleanRecordDays < 0 || cleanRecordDays > 365) {
+            toast.error('Clean record period must be between 0 and 365 days');
+            return;
+        }
 
         try {
             setSavingRecovery(true);
-            // Build payload based on role:
-            // super_admin can update both points and period;
-            // admin_officer can only update the period.
             const payload: Record<string, number> = {
                 recoveryPeriodMonths: recoveryPeriod,
+                cleanRecordDays: cleanRecordDays,
             };
             if (canEditDemerit) {
                 payload.monthlyRecoveryPoints = recoveryPoints;
@@ -473,6 +478,32 @@ export default function SystemConfigPage() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                    </div>
+
+                                    {/* Clean Record Period (Days) */}
+                                    <div className="space-y-2 pt-4 border-t border-gray-100">
+                                        <Label htmlFor="cleanRecordDays">
+                                            Clean Record Requirement Period
+                                            {!canEditPeriod && (
+                                                <span className="ml-2 text-xs text-gray-400 font-normal">(view only)</span>
+                                            )}
+                                        </Label>
+                                        <div className="flex flex-col gap-1 text-sm text-gray-500 mb-2">
+                                            <p>Number of consecutive days a driver must have no new offenses before receiving recovery points.</p>
+                                        </div>
+                                        <div className="flex items-center gap-3 max-w-md">
+                                            <Input
+                                                id="cleanRecordDays"
+                                                type="number"
+                                                min="0"
+                                                max="365"
+                                                value={cleanRecordDays}
+                                                onChange={(e) => setCleanRecordDays(parseInt(e.target.value) || 0)}
+                                                disabled={!canEditPeriod}
+                                                className="w-28"
+                                            />
+                                            <span className="font-medium text-gray-700">Days without offenses</span>
+                                        </div>
                                     </div>
 
                                     {/* Last run info */}

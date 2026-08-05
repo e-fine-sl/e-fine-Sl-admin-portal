@@ -151,6 +151,7 @@ export interface SystemConfig {
     defaultDemeritPoints: number;
     monthlyRecoveryPoints: number;
     recoveryPeriodMonths: number;
+    cleanRecordDays: number;
     recoveryEnabled: boolean;
     lastRecoveryRunAt: string | null;
     createdAt: string;
