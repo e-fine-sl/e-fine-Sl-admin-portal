@@ -45,6 +45,25 @@ export default function FinesPage() {
         fetchFines();
     }, [page, search, statusFilter, startDate, endDate]);
 
+    const handleDownloadPdf = async (fineId: string) => {
+        try {
+            const response = await api.get(`/fines/${fineId}/pdf`, {
+                responseType: 'blob',
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `e-Fine-Receipt-${fineId.slice(-8).toUpperCase()}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode?.removeChild(link);
+            toast.success('e-Fine Receipt downloaded successfully');
+        } catch (error) {
+            console.error('Failed to download fine PDF:', error);
+            toast.error('Failed to download e-Fine Receipt');
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -107,7 +126,7 @@ export default function FinesPage() {
                                 <option value="PAID">Paid</option>
                                 <option value="UNPAID">Unpaid</option>
                             </select>
- 
+
                              {/* Search */}
                              <div className="relative">
                                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -139,6 +158,7 @@ export default function FinesPage() {
                                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Amount</th>
                                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Officer ID</th>
                                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Receipt</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -158,6 +178,16 @@ export default function FinesPage() {
                                                 >
                                                     {fine.status}
                                                 </Badge>
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleDownloadPdf(fine._id)}
+                                                    className="text-xs h-8 px-2.5 border-gray-300 hover:bg-blue-50 text-blue-700"
+                                                >
+                                                    PDF
+                                                </Button>
                                             </td>
                                         </tr>
                                     ))}
