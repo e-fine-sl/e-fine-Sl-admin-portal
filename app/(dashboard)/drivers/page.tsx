@@ -98,13 +98,16 @@ export default function DriversPage() {
         fetchDrivers();
     }, [page, search]);
 
+    const [suspensionReason, setSuspensionReason] = useState('Dangerous driving offense / Demerit points exhausted');
+
     const openSuspendDialog = (driver: Driver) => {
+        setSuspensionReason('Dangerous driving offense / Demerit points exhausted');
         setDialogConfig({
             icon: '⊘',
             iconColor: '#ffffff',
             iconBgColor: '#F44336',
             title: 'Suspend License',
-            message: `Are you sure you want to suspend the license for ${driver.name}? The driver will be notified by email immediately.`,
+            message: `Are you sure you want to suspend the license for ${driver.name}? Please provide a reason note below for the driver.`,
             confirmText: 'Yes, Suspend',
             confirmColor: '#F44336',
             driverId: driver._id,
@@ -137,7 +140,7 @@ export default function DriversPage() {
             : `/admin/drivers/${driverId}/activate`;
 
         await api.put(endpoint, {
-            reason: newStatus === 'SUSPENDED' ? 'Suspended by administrator' : undefined,
+            reason: newStatus === 'SUSPENDED' ? suspensionReason : undefined,
         });
 
         // Update locally without full refetch
@@ -151,8 +154,8 @@ export default function DriversPage() {
 
         toast.success(
             newStatus === 'ACTIVE'
-                ? '✓ License Activated — Driver has been notified by email'
-                : '✗ License Suspended — Driver has been notified by email'
+                ? '✓ License Activated — Driver notified by email & push'
+                : '✗ License Suspended — Driver notified by email & push'
         );
     };
 
@@ -374,8 +377,51 @@ export default function DriversPage() {
                 </CardContent>
             </Card>
 
-            {/* Reusable Confirm Dialog */}
-            {dialogConfig && (
+            {/* Reusable Confirm Dialog for Activation / Suspension */}
+            {dialogConfig && dialogConfig.newStatus === 'SUSPENDED' ? (
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl flex items-center gap-2 text-red-600">
+                                <span className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-lg">⊘</span>
+                                Suspend Driver License
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-2">
+                            <p className="text-sm text-gray-600">
+                                {dialogConfig.message}
+                            </p>
+                            <div className="space-y-1.5">
+                                <label htmlFor="suspensionReasonInput" className="text-xs font-semibold text-gray-700">
+                                    Suspension Reason / Official Note *
+                                </label>
+                                <Input
+                                    id="suspensionReasonInput"
+                                    value={suspensionReason}
+                                    onChange={(e) => setSuspensionReason(e.target.value)}
+                                    placeholder="Enter reason for license suspension..."
+                                    className="w-full text-sm"
+                                />
+                                <p className="text-[11px] text-gray-400">This note will be included in the official push notification and email sent to the driver.</p>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-3 border-t">
+                                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                    onClick={() => {
+                                        setDialogOpen(false);
+                                        handleStatusChange();
+                                    }}
+                                >
+                                    Confirm Suspension
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            ) : dialogConfig && (
                 <ConfirmDialog
                     open={dialogOpen}
                     onOpenChange={setDialogOpen}
