@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { PaymentService } from '@/services/paymentService';
 import { PaymentQueryDTO } from '@/types/payment.types';
-import { Download, FileSpreadsheet, FileCode, CheckCircle2 } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PaymentExportModalProps {
@@ -28,7 +28,7 @@ export const PaymentExportModal: React.FC<PaymentExportModalProps> = ({
     currentFilters,
     totalRecords
 }) => {
-    const [format, setFormat] = useState<'csv' | 'json'>('csv');
+    const [format, setFormat] = useState<'csv' | 'pdf'>('csv');
     const [exporting, setExporting] = useState(false);
 
     const handleExport = async () => {
@@ -39,7 +39,7 @@ export const PaymentExportModal: React.FC<PaymentExportModalProps> = ({
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `eFine_Payments_Export_${Date.now()}.${format}`);
+            link.setAttribute('download', `eFine_Settlement_Ledger_${new Date().toISOString().slice(0, 10)}.${format}`);
             document.body.appendChild(link);
             link.click();
             link.parentNode?.removeChild(link);
@@ -103,15 +103,15 @@ export const PaymentExportModal: React.FC<PaymentExportModalProps> = ({
                             </div>
 
                             <div 
-                                onClick={() => setFormat('json')}
+                                onClick={() => setFormat('pdf')}
                                 className={`cursor-pointer p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all ${
-                                    format === 'json' 
+                                    format === 'pdf' 
                                         ? 'border-blue-600 bg-blue-50/50 text-blue-700 font-semibold shadow-sm' 
                                         : 'hover:bg-gray-50 text-gray-600'
                                 }`}
                             >
-                                <FileCode className="h-6 w-6 text-amber-600" />
-                                <span className="text-xs">Raw JSON Dataset</span>
+                                <FileText className="h-6 w-6 text-rose-600" />
+                                <span className="text-xs">PDF Document / Ledger</span>
                             </div>
                         </div>
                     </div>

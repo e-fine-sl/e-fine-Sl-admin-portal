@@ -62,9 +62,9 @@ export const PaymentService = {
     },
 
     /**
-     * Export payments to CSV / JSON format
+     * Export payments to CSV / PDF format
      */
-    async exportPayments(params: PaymentQueryDTO, format: 'csv' | 'json' = 'csv'): Promise<Blob> {
+    async exportPayments(params: PaymentQueryDTO, format: 'csv' | 'pdf' = 'csv'): Promise<Blob> {
         const response = await api.get('/admin/payments/export', {
             params: { ...params, format },
             responseType: 'blob'
