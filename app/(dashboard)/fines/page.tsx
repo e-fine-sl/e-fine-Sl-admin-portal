@@ -1,235 +1,216 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import api from '@/lib/api';
-import { IssuedFine } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { formatCurrency, formatDate } from '@/lib/utils';
-import { Search, Filter } from 'lucide-react';
+import React, { useState } from 'react';
+import { useFines } from '@/hooks/useFines';
+import { FineMetricsCards } from '@/components/fines/FineMetricsCards';
+import { FineFilters } from '@/components/fines/FineFilters';
+import { FineTable } from '@/components/fines/FineTable';
+import { FineDetailModal } from '@/components/fines/FineDetailModal';
+import { FineCreateModal } from '@/components/fines/FineCreateModal';
+import { FineStatusModal } from '@/components/fines/FineStatusModal';
+import { FineExportModal } from '@/components/fines/FineExportModal';
+import { FineService } from '@/services/fineService';
+import { FineDTO } from '@/types/fine.types';
+import { useAuth } from '@/context/AuthContext';
+import { USER_ROLES } from '@/lib/constants';
 import { toast } from 'sonner';
+import { RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function FinesPage() {
-    const [fines, setFines] = useState<IssuedFine[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'PAID' | 'UNPAID'>('all');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [page, setPage] = useState(1);
-    const [total, setTotal] = useState(0);
+    const { user } = useAuth();
+    const canCreate = user?.role === USER_ROLES.SUPER_ADMIN || user?.role === USER_ROLES.ADMIN_OFFICER;
 
-    const fetchFines = async () => {
-        try {
-            setLoading(true);
-            const params: any = { page, limit: 15 };
-            if (search) params.search = search;
-            if (statusFilter !== 'all') params.status = statusFilter;
-            if (startDate) params.startDate = startDate;
-            if (endDate) params.endDate = endDate;
+    const {
+        fines,
+        metrics,
+        loading,
+        metricsLoading,
+        page,
+        setPage,
+        limit,
+        total,
+        pages,
+        search,
+        setSearch,
+        status,
+        setStatus,
+        policeStation,
+        setPoliceStation,
+        startDate,
+        setStartDate,
+        endDate,
+        setEndDate,
+        sortBy,
+        sortOrder,
+        toggleSort,
+        refetchFines,
+        refetchMetrics,
+        resetFilters
+    } = useFines();
 
-            const response = await api.get(`/admin/fines`, { params });
-            setFines(response.data.data);
-            setTotal(response.data.total);
-        } catch (error) {
-            console.error('Failed to fetch fines:', error);
-            toast.error('Failed to load fines');
-        } finally {
-            setLoading(false);
-        }
+    // Modals State
+    const [selectedFine, setSelectedFine] = useState<FineDTO | null>(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+    // Handlers
+    const handleOpenDetail = (fine: FineDTO) => {
+        setSelectedFine(fine);
+        setIsDetailModalOpen(true);
     };
 
-    useEffect(() => {
-        fetchFines();
-    }, [page, search, statusFilter, startDate, endDate]);
+    const handleOpenStatus = (fine: FineDTO) => {
+        setSelectedFine(fine);
+        setIsStatusModalOpen(true);
+    };
 
-    const handleDownloadPdf = async (fineId: string) => {
+    const handleDownloadSinglePdf = async (fine: FineDTO) => {
         try {
-            const response = await api.get(`/fines/${fineId}/pdf`, {
-                responseType: 'blob',
-            });
-            const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+            const blob = await FineService.downloadReceiptPdf(fine._id);
+            const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `e-Fine-Receipt-${fineId.slice(-8).toUpperCase()}.pdf`);
+            link.setAttribute('download', `e-Fine-Receipt-${fine._id.slice(-8).toUpperCase()}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.parentNode?.removeChild(link);
-            toast.success('e-Fine Receipt downloaded successfully');
+            toast.success('e-Fine Receipt downloaded');
         } catch (error) {
-            console.error('Failed to download fine PDF:', error);
+            console.error('Failed to download PDF:', error);
             toast.error('Failed to download e-Fine Receipt');
         }
     };
 
+    const handleDeleteFine = async (fine: FineDTO) => {
+        if (!confirm(`Are you sure you want to delete citation #${fine._id.slice(-8).toUpperCase()} (License: ${fine.licenseNumber})?`)) {
+            return;
+        }
+
+        try {
+            const res = await FineService.deleteFine(fine._id);
+            toast.success(res.message || 'Citation removed from registry');
+            refetchFines();
+            refetchMetrics();
+        } catch (error: any) {
+            console.error('Delete failed:', error);
+            toast.error(error.response?.data?.message || 'Failed to delete citation');
+        }
+    };
+
+    const handleRefreshAll = () => {
+        refetchFines();
+        refetchMetrics();
+        toast.info('Traffic citations directory refreshed');
+    };
+
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-6 pb-12">
+            {/* Page Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold">Fines</h1>
-                    <p className="text-gray-500 mt-1">View and manage all issued fines</p>
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Fines & Citations</h1>
+                    <p className="text-sm text-gray-500 mt-1">
+                        Review, issue, and manage national traffic citations, dispute claims, and revenue settlement
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefreshAll}
+                        className="text-xs font-semibold text-gray-700 hover:bg-gray-100 flex items-center gap-1.5"
+                    >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Refresh Fines
+                    </Button>
                 </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle>All Fines ({total})</CardTitle>
-                        <div className="flex flex-wrap items-center gap-3">
-                            {/* Date Pickers */}
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    type="date"
-                                    className="w-40"
-                                    value={startDate}
-                                    onChange={(e) => {
-                                        setStartDate(e.target.value);
-                                        setPage(1);
-                                    }}
-                                    placeholder="Start Date"
-                                />
-                                <span className="text-gray-400">to</span>
-                                <Input
-                                    type="date"
-                                    className="w-40"
-                                    value={endDate}
-                                    onChange={(e) => {
-                                        setEndDate(e.target.value);
-                                        setPage(1);
-                                    }}
-                                    placeholder="End Date"
-                                />
-                                {(startDate || endDate) && (
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        onClick={() => {
-                                            setStartDate('');
-                                            setEndDate('');
-                                        }}
-                                        className="text-xs h-9"
-                                    >
-                                        Clear
-                                    </Button>
-                                )}
-                            </div>
+            {/* 1. Executive Citation Metrics */}
+            <FineMetricsCards metrics={metrics} loading={metricsLoading} />
 
-                            {/* Status Filter */}
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value as any)}
-                                className="px-3 py-2 border rounded-md text-sm h-10"
-                            >
-                                <option value="all">All Status</option>
-                                <option value="PAID">Paid</option>
-                                <option value="UNPAID">Unpaid</option>
-                            </select>
+            {/* 2. Multi-Dimensional Filter Bar */}
+            <FineFilters
+                search={search}
+                onSearchChange={setSearch}
+                status={status}
+                onStatusChange={setStatus}
+                policeStation={policeStation}
+                onPoliceStationChange={setPoliceStation}
+                startDate={startDate}
+                onStartDateChange={setStartDate}
+                endDate={endDate}
+                onEndDateChange={setEndDate}
+                onResetFilters={resetFilters}
+                onOpenExport={() => setIsExportModalOpen(true)}
+                onOpenCreate={() => setIsCreateModalOpen(true)}
+                canCreate={canCreate}
+                totalResults={total}
+            />
 
-                             {/* Search */}
-                             <div className="relative">
-                                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                                 <Input
-                                     placeholder="Search by license, vehicle, location, officer..."
-                                     className="pl-9 w-64 h-10"
-                                     value={search}
-                                     onChange={(e) => setSearch(e.target.value)}
-                                 />
-                             </div>
-                         </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                        <div className="flex justify-center py-12">
-                            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b bg-gray-50">
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">License Number</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Vehicle Number</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Offense</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Location</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Amount</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Officer ID</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Receipt</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {fines.map((fine) => (
-                                        <tr key={fine._id} className="border-b hover:bg-gray-50">
-                                            <td className="px-4 py-3 text-sm">{formatDate(fine.date)}</td>
-                                            <td className="px-4 py-3 text-sm font-medium">{fine.licenseNumber}</td>
-                                            <td className="px-4 py-3 text-sm">{fine.vehicleNumber}</td>
-                                            <td className="px-4 py-3 text-sm">{fine.offenseName}</td>
-                                            <td className="px-4 py-3 text-sm">{fine.place}</td>
-                                            <td className="px-4 py-3 text-sm font-semibold">{formatCurrency(fine.amount)}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-500 font-mono">{fine.policeOfficerId || 'N/A'}</td>
-                                            <td className="px-4 py-3">
-                                                <Badge 
-                                                    className={fine.status === 'PAID' ? 'bg-emerald-900 hover:bg-emerald-800 text-white' : ''}
-                                                    variant={fine.status === 'PAID' ? 'default' : 'destructive'}
-                                                >
-                                                    {fine.status}
-                                                </Badge>
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleDownloadPdf(fine._id)}
-                                                    className="text-xs h-8 px-2.5 border-gray-300 hover:bg-blue-50 text-blue-700"
-                                                >
-                                                    PDF
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+            {/* 3. Citations Table */}
+            <FineTable
+                fines={fines}
+                loading={loading}
+                page={page}
+                pages={pages}
+                total={total}
+                limit={limit}
+                onPageChange={setPage}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={toggleSort}
+                onSelectFine={handleOpenDetail}
+                onUpdateStatus={handleOpenStatus}
+                onDownloadPdf={handleDownloadSinglePdf}
+                onDeleteFine={handleDeleteFine}
+            />
 
-                            {fines.length === 0 && (
-                                <div className="text-center py-12 text-gray-500">
-                                    No fines found
-                                </div>
-                            )}
+            {/* 4. Fine Dossier Modal */}
+            <FineDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                fine={selectedFine}
+                onUpdateStatus={handleOpenStatus}
+            />
 
-                            {/* Pagination */}
-                            {total > 15 && (
-                                <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                                    <p className="text-sm text-gray-600">
-                                        Showing {(page - 1) * 15 + 1} to {Math.min(page * 15, total)} of {total}
-                                    </p>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={page === 1}
-                                            onClick={() => setPage(page - 1)}
-                                        >
-                                            Previous
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={page * 15 >= total}
-                                            onClick={() => setPage(page + 1)}
-                                        >
-                                            Next
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            {/* 5. Issue Fine Modal */}
+            <FineCreateModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={() => {
+                    refetchFines();
+                    refetchMetrics();
+                }}
+            />
+
+            {/* 6. Update Status / Dispute Modal */}
+            <FineStatusModal
+                isOpen={isStatusModalOpen}
+                onClose={() => setIsStatusModalOpen(false)}
+                fine={selectedFine}
+                onSuccess={() => {
+                    refetchFines();
+                    refetchMetrics();
+                }}
+            />
+
+            {/* 7. Download Fines Ledger Modal */}
+            <FineExportModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                currentFilters={{
+                    search: search.trim() || undefined,
+                    status: status !== 'ALL' ? status : undefined,
+                    policeStation: policeStation !== 'ALL' ? policeStation : undefined,
+                    startDate: startDate || undefined,
+                    endDate: endDate || undefined
+                }}
+                totalRecords={total}
+            />
         </div>
     );
 }
