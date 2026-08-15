@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,7 +10,8 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
-import { Search, RotateCcw, Download, Plus, Calendar } from 'lucide-react';
+import { FineService } from '@/services/fineService';
+import { Search, RotateCcw, Download, Plus, Calendar, Building2, ChevronDown, Check, X } from 'lucide-react';
 import { FineStatus } from '@/types/fine.types';
 
 interface FineFiltersProps {
@@ -31,21 +32,6 @@ interface FineFiltersProps {
     totalResults: number;
 }
 
-const COMMON_STATIONS = [
-    'ALL',
-    'Colombo Fort Police Station',
-    'Pettah Police Station',
-    'Borella Police Station',
-    'Kollupitiya Police Station',
-    'Bambalapitiya Police Station',
-    'Cinnamon Gardens Police Station',
-    'Wellawatte Police Station',
-    'Maradana Police Station',
-    'Kandy Police Station',
-    'Galle Police Station',
-    'Court Administration'
-];
-
 export const FineFilters: React.FC<FineFiltersProps> = ({
     search,
     onSearchChange,
@@ -63,6 +49,41 @@ export const FineFilters: React.FC<FineFiltersProps> = ({
     canCreate,
     totalResults
 }) => {
+    // Dynamic database stations
+    const [stations, setStations] = useState<Array<{ _id: string; name: string; stationCode?: string; district?: string }>>([]);
+    const [stationQuery, setStationQuery] = useState('');
+    const [isStationOpen, setIsStationOpen] = useState(false);
+    const stationRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        FineService.getStations()
+            .then((data) => setStations(data || []))
+            .catch((err) => console.error('Failed to load stations in filters:', err));
+    }, []);
+
+    // Close station dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (stationRef.current && !stationRef.current.contains(e.target as Node)) {
+                setIsStationOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Filter stations by query
+    const filteredStations = useMemo(() => {
+        if (!stationQuery.trim()) return stations;
+        const q = stationQuery.toLowerCase();
+        return stations.filter(
+            (s) =>
+                (s.name || '').toLowerCase().includes(q) ||
+                (s.stationCode || '').toLowerCase().includes(q) ||
+                (s.district || '').toLowerCase().includes(q)
+        );
+    }, [stations, stationQuery]);
+
     const hasActiveFilters = search || status !== 'ALL' || policeStation !== 'ALL' || startDate || endDate;
 
     return (
@@ -70,7 +91,7 @@ export const FineFilters: React.FC<FineFiltersProps> = ({
             {/* Top Bar: Search, Date Range, Status & Actions */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 {/* Search Input */}
-                <div className="relative flex-1 min-w-[240px]">
+                <div className="relative flex-1 min-w-[220px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                         placeholder="Search by license #, vehicle plate, offense, place, officer..."
@@ -118,20 +139,95 @@ export const FineFilters: React.FC<FineFiltersProps> = ({
                         </Select>
                     </div>
 
-                    {/* Police Station Filter */}
-                    <div className="w-44">
-                        <Select value={policeStation} onValueChange={(v) => onPoliceStationChange(v)}>
-                            <SelectTrigger className="h-9 text-xs">
-                                <SelectValue placeholder="Police Station" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {COMMON_STATIONS.map((station) => (
-                                    <SelectItem key={station} value={station}>
-                                        {station === 'ALL' ? 'All Police Stations' : station}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    {/* Searchable Database Police Station Filter */}
+                    <div className="relative w-52" ref={stationRef}>
+                        <button
+                            type="button"
+                            onClick={() => setIsStationOpen(!isStationOpen)}
+                            className="w-full h-9 px-3 border rounded-md text-xs bg-white flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                        >
+                            <div className="truncate pr-1">
+                                {policeStation === 'ALL' ? (
+                                    <span className="text-gray-500 flex items-center gap-1">
+                                        <Building2 className="h-3 w-3 text-gray-400" />
+                                        All Police Stations ({stations.length})
+                                    </span>
+                                ) : (
+                                    <span className="font-semibold text-gray-900">{policeStation}</span>
+                                )}
+                            </div>
+                            <ChevronDown className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                        </button>
+
+                        {/* Searchable dropdown menu */}
+                        {isStationOpen && (
+                            <div className="absolute right-0 top-10 w-64 bg-white rounded-lg border shadow-lg z-50 p-2 space-y-1.5 text-xs">
+                                <div className="relative">
+                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                                    <Input
+                                        placeholder="Search station or district..."
+                                        value={stationQuery}
+                                        onChange={(e) => setStationQuery(e.target.value)}
+                                        className="h-7 text-xs pl-8 bg-gray-50"
+                                        autoFocus
+                                    />
+                                    {stationQuery && (
+                                        <button
+                                            onClick={() => setStationQuery('')}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                                    <div
+                                        onClick={() => {
+                                            onPoliceStationChange('ALL');
+                                            setIsStationOpen(false);
+                                            setStationQuery('');
+                                        }}
+                                        className={`p-1.5 rounded cursor-pointer flex items-center justify-between ${
+                                            policeStation === 'ALL' ? 'bg-blue-50 text-blue-700 font-bold' : 'hover:bg-gray-50 text-gray-700'
+                                        }`}
+                                    >
+                                        <span>All Police Stations</span>
+                                        {policeStation === 'ALL' && <Check className="h-3.5 w-3.5 text-blue-600" />}
+                                    </div>
+
+                                    {filteredStations.map((st) => (
+                                        <div
+                                            key={st._id}
+                                            onClick={() => {
+                                                onPoliceStationChange(st.name);
+                                                setIsStationOpen(false);
+                                                setStationQuery('');
+                                            }}
+                                            className={`p-1.5 rounded cursor-pointer flex items-center justify-between ${
+                                                policeStation === st.name ? 'bg-blue-50 text-blue-700 font-bold' : 'hover:bg-gray-50 text-gray-700'
+                                            }`}
+                                        >
+                                            <div className="truncate pr-1">
+                                                <div className="font-medium truncate">{st.name}</div>
+                                                {st.district && (
+                                                    <div className="text-[10px] text-gray-400">{st.district} Province</div>
+                                                )}
+                                            </div>
+                                            {policeStation === st.name && (
+                                                <Check className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+                                            )}
+                                        </div>
+                                    ))}
+
+                                    {filteredStations.length === 0 && (
+                                        <div className="p-2 text-center text-gray-400 text-[11px]">
+                                            No police stations found
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Reset Button */}
@@ -179,7 +275,7 @@ export const FineFilters: React.FC<FineFiltersProps> = ({
                 </div>
                 {hasActiveFilters && (
                     <div className="text-blue-600 font-medium">
-                        Filtered view active
+                        Filtered view active {policeStation !== 'ALL' && `• Station: ${policeStation}`}
                     </div>
                 )}
             </div>

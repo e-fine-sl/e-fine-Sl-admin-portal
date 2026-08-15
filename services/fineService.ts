@@ -80,4 +80,39 @@ export class FineService {
         const response = await api.delete<{ success: boolean; message: string }>(`/admin/fines/${id}`);
         return response.data;
     }
+
+    /**
+     * Get all traffic offenses list
+     */
+    static async getOffenses(): Promise<any[]> {
+        try {
+            const response = await api.get('/admin/fines/offenses').catch(() => api.get('/fines/offenses'));
+            const data = response.data?.data || response.data;
+            if (Array.isArray(data)) {
+                return data.map((o: any) => ({
+                    ...o,
+                    demeritPoints: o.demeritPoints ?? o.demeritValue ?? 0
+                }));
+            }
+            return [];
+        } catch (error) {
+            console.error('Failed to fetch offenses:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get all police stations list from database
+     */
+    static async getStations(): Promise<Array<{ _id: string; name: string; stationCode?: string; district?: string }>> {
+        try {
+            const response = await api.get('/admin/stations').catch(() => api.get('/stations'));
+            const data = response.data?.data || response.data;
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('Failed to fetch stations:', error);
+            return [];
+        }
+    }
 }
+

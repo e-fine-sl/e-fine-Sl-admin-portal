@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -12,19 +12,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from '@/components/ui/select';
 import { FineService } from '@/services/fineService';
 import { CreateFineDTO, FineOffenseDTO } from '@/types/fine.types';
-import api from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
-import { Plus, Scale, AlertCircle } from 'lucide-react';
+import { Plus, Scale, Search, Building2, Check, ChevronsUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FineCreateModalProps {
@@ -42,26 +33,69 @@ export const FineCreateModal: React.FC<FineCreateModalProps> = ({
     const [vehicleNumber, setVehicleNumber] = useState('');
     const [offenseId, setOffenseId] = useState('');
     const [place, setPlace] = useState('');
-    const [policeStation, setPoliceStation] = useState('Colombo Fort Police Station');
+    const [policeStation, setPoliceStation] = useState('');
     const [policeOfficerId, setPoliceOfficerId] = useState('ADMIN-DESK');
     const [notes, setNotes] = useState('');
 
+    // Offenses state & search
     const [offenses, setOffenses] = useState<FineOffenseDTO[]>([]);
     const [loadingOffenses, setLoadingOffenses] = useState(false);
+    const [offenseSearch, setOffenseSearch] = useState('');
+
+    // Stations state & search
+    const [stations, setStations] = useState<Array<{ _id: string; name: string; stationCode?: string; district?: string }>>([]);
+    const [loadingStations, setLoadingStations] = useState(false);
+    const [stationSearch, setStationSearch] = useState('');
+    const [isStationDropdownOpen, setIsStationDropdownOpen] = useState(false);
+
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
             setLoadingOffenses(true);
-            api.get('/admin/fines/offenses')
-                .then((res) => {
-                    const data = res.data.data || res.data;
-                    setOffenses(Array.isArray(data) ? data : []);
-                })
+            setLoadingStations(true);
+
+            // Load offenses
+            FineService.getOffenses()
+                .then((data) => setOffenses(data || []))
                 .catch((err) => console.error('Failed to load offenses:', err))
                 .finally(() => setLoadingOffenses(false));
+
+            // Load stations
+            FineService.getStations()
+                .then((data) => {
+                    setStations(data || []);
+                    if (data && data.length > 0 && !policeStation) {
+                        setPoliceStation(data[0].name);
+                    }
+                })
+                .catch((err) => console.error('Failed to load stations:', err))
+                .finally(() => setLoadingStations(false));
         }
     }, [isOpen]);
+
+    // Filter offenses by search
+    const filteredOffenses = useMemo(() => {
+        if (!offenseSearch.trim()) return offenses;
+        const q = offenseSearch.toLowerCase();
+        return offenses.filter(
+            (o) =>
+                (o.offenseName || '').toLowerCase().includes(q) ||
+                (o.sectionOfAct || '').toLowerCase().includes(q)
+        );
+    }, [offenses, offenseSearch]);
+
+    // Filter stations by search
+    const filteredStations = useMemo(() => {
+        if (!stationSearch.trim()) return stations;
+        const q = stationSearch.toLowerCase();
+        return stations.filter(
+            (s) =>
+                (s.name || '').toLowerCase().includes(q) ||
+                (s.stationCode || '').toLowerCase().includes(q) ||
+                (s.district || '').toLowerCase().includes(q)
+        );
+    }, [stations, stationSearch]);
 
     const selectedOffense = offenses.find((o) => o._id === offenseId);
 
@@ -80,8 +114,8 @@ export const FineCreateModal: React.FC<FineCreateModalProps> = ({
                 vehicleNumber: vehicleNumber.toUpperCase().trim(),
                 offenseId,
                 place: place.trim(),
-                policeStation: policeStation.trim(),
-                policeOfficerId: policeOfficerId.trim(),
+                policeStation: policeStation.trim() || 'Court Administration',
+                policeOfficerId: policeOfficerId.trim() || 'ADMIN-DESK',
                 notes: notes.trim() || undefined
             };
 
@@ -94,6 +128,8 @@ export const FineCreateModal: React.FC<FineCreateModalProps> = ({
             setOffenseId('');
             setPlace('');
             setNotes('');
+            setOffenseSearch('');
+            setStationSearch('');
 
             onSuccess();
             onClose();
@@ -107,7 +143,7 @@ export const FineCreateModal: React.FC<FineCreateModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
@@ -124,7 +160,7 @@ export const FineCreateModal: React.FC<FineCreateModalProps> = ({
                     </div>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-3 py-2 text-xs">
+                <form onSubmit={handleSubmit} className="space-y-3.5 py-2 text-xs">
                     {/* License Number & Vehicle Number */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
@@ -149,41 +185,146 @@ export const FineCreateModal: React.FC<FineCreateModalProps> = ({
                         </div>
                     </div>
 
-                    {/* Offense Selector */}
-                    <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-gray-700">Traffic Offense / Violation *</Label>
-                        <Select value={offenseId} onValueChange={setOffenseId}>
-                            <SelectTrigger className="h-8 text-xs">
-                                <SelectValue placeholder={loadingOffenses ? 'Loading offenses...' : 'Select Traffic Offense'} />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-56">
-                                {offenses.map((offense) => (
-                                    <SelectItem key={offense._id} value={offense._id} className="text-xs">
-                                        <div className="flex justify-between items-center gap-4 w-full">
-                                            <span>{offense.offenseName}</span>
-                                            <span className="font-mono text-gray-500">{formatCurrency(offense.amount || 0)}</span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    {/* Offense Selector with Search */}
+                    <div className="space-y-1.5">
+                        <div className="flex justify-between items-center">
+                            <Label className="text-xs font-semibold text-gray-700">
+                                Traffic Offense / Violation * ({offenses.length} available)
+                            </Label>
+                            {loadingOffenses && (
+                                <span className="text-[10px] text-blue-600 font-medium animate-pulse">Loading offenses...</span>
+                            )}
+                        </div>
 
-                        {/* Offense preview banner */}
-                        {selectedOffense && (
-                            <div className="bg-blue-50/70 p-2.5 rounded-lg border border-blue-200 flex justify-between items-center text-xs mt-1">
-                                <div>
-                                    <span className="font-semibold text-blue-900">{selectedOffense.offenseName}</span>
-                                    <span className="text-[11px] text-blue-700 block">{selectedOffense.sectionOfAct || 'Motor Traffic Act'}</span>
+                        {/* Search Input for Offenses */}
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                            <Input
+                                placeholder="Search offense by name or legal section..."
+                                value={offenseSearch}
+                                onChange={(e) => setOffenseSearch(e.target.value)}
+                                className="h-7 text-xs pl-8 mb-1 bg-gray-50"
+                            />
+                        </div>
+
+                        {/* Offenses list box */}
+                        <div className="border rounded-lg max-h-36 overflow-y-auto divide-y bg-white text-xs">
+                            {filteredOffenses.map((offense) => (
+                                <div
+                                    key={offense._id}
+                                    onClick={() => setOffenseId(offense._id)}
+                                    className={`p-2 cursor-pointer flex justify-between items-center transition-colors ${
+                                        offenseId === offense._id
+                                            ? 'bg-blue-50/80 border-l-4 border-l-blue-600 font-medium'
+                                            : 'hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <div className="pr-2">
+                                        <div className="text-gray-900 font-semibold">{offense.offenseName}</div>
+                                        <div className="text-[10px] text-gray-500">{offense.sectionOfAct || 'Motor Traffic Act'}</div>
+                                    </div>
+                                    <div className="text-right flex-shrink-0">
+                                        <div className="font-mono font-bold text-gray-900">{formatCurrency(offense.amount || 0)}</div>
+                                        <div className="text-[10px] text-rose-600 font-medium">-{offense.demeritPoints || 0} pts</div>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <span className="font-mono font-bold text-blue-900 block">{formatCurrency(selectedOffense.amount || 0)}</span>
-                                    <span className="text-[10px] text-rose-600 font-semibold">-{selectedOffense.demeritPoints || 0} Demerit Pts</span>
+                            ))}
+
+                            {filteredOffenses.length === 0 && (
+                                <div className="p-3 text-center text-gray-400 text-xs">
+                                    No offenses match "{offenseSearch}"
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Selected Offense Highlight */}
+                        {selectedOffense && (
+                            <div className="bg-blue-50/70 p-2 rounded-lg border border-blue-200 flex justify-between items-center text-xs">
+                                <div>
+                                    <span className="font-bold text-blue-900">Selected: {selectedOffense.offenseName}</span>
+                                    <span className="text-[10px] text-blue-700 block">{selectedOffense.sectionOfAct || 'Motor Traffic Act'}</span>
+                                </div>
+                                <div className="text-right font-mono font-bold text-blue-900">
+                                    {formatCurrency(selectedOffense.amount || 0)}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Place & Station */}
+                    {/* Police Command Station with Live Search */}
+                    <div className="space-y-1.5">
+                        <div className="flex justify-between items-center">
+                            <Label className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                                <Building2 className="h-3.5 w-3.5 text-blue-600" />
+                                Police Command Station *
+                            </Label>
+                            {loadingStations && (
+                                <span className="text-[10px] text-blue-600 animate-pulse">Loading stations...</span>
+                            )}
+                        </div>
+
+                        {/* Station Selector with search filter */}
+                        <div className="space-y-1">
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                                <Input
+                                    placeholder="Search station by name or district..."
+                                    value={stationSearch}
+                                    onChange={(e) => {
+                                        setStationSearch(e.target.value);
+                                        setIsStationDropdownOpen(true);
+                                    }}
+                                    onFocus={() => setIsStationDropdownOpen(true)}
+                                    className="h-8 text-xs pl-8 bg-gray-50"
+                                />
+                            </div>
+
+                            {/* Dropdown station options */}
+                            {isStationDropdownOpen && (
+                                <div className="border rounded-lg max-h-32 overflow-y-auto divide-y bg-white shadow-sm text-xs">
+                                    {filteredStations.map((st) => (
+                                        <div
+                                            key={st._id}
+                                            onClick={() => {
+                                                setPoliceStation(st.name);
+                                                setStationSearch('');
+                                                setIsStationDropdownOpen(false);
+                                            }}
+                                            className={`p-2 cursor-pointer flex justify-between items-center transition-colors ${
+                                                policeStation === st.name ? 'bg-blue-50 font-bold text-blue-700' : 'hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            <div>
+                                                <span className="font-semibold">{st.name}</span>
+                                                {st.district && <span className="text-[10px] text-gray-500 ml-1.5">({st.district})</span>}
+                                            </div>
+                                            {st.stationCode && (
+                                                <span className="font-mono text-[10px] text-gray-400">{st.stationCode}</span>
+                                            )}
+                                        </div>
+                                    ))}
+
+                                    {filteredStations.length === 0 && (
+                                        <div 
+                                            onClick={() => {
+                                                setPoliceStation(stationSearch);
+                                                setIsStationDropdownOpen(false);
+                                            }}
+                                            className="p-2 text-center text-blue-600 hover:bg-blue-50 cursor-pointer text-xs font-semibold"
+                                        >
+                                            Use custom station name: "{stationSearch}"
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="text-[11px] text-gray-600 font-medium mt-0.5">
+                                Current Station: <strong className="text-gray-900">{policeStation || 'None selected'}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Incident Location & Officer ID */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                             <Label className="text-xs font-semibold text-gray-700">Incident Location *</Label>
@@ -196,34 +337,24 @@ export const FineCreateModal: React.FC<FineCreateModalProps> = ({
                             />
                         </div>
                         <div className="space-y-1">
-                            <Label className="text-xs font-semibold text-gray-700">Police Command Station</Label>
-                            <Input
-                                value={policeStation}
-                                onChange={(e) => setPoliceStation(e.target.value)}
-                                className="h-8 text-xs"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Officer ID & Notes */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold text-gray-700">Issuing Officer Badge / ID</Label>
+                            <Label className="text-xs font-semibold text-gray-700">Officer Badge / ID</Label>
                             <Input
                                 value={policeOfficerId}
                                 onChange={(e) => setPoliceOfficerId(e.target.value)}
                                 className="h-8 text-xs font-mono"
                             />
                         </div>
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold text-gray-700">Citation / Court Reference</Label>
-                            <Input
-                                placeholder="e.g. Manual Ticket #MT-904"
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                className="h-8 text-xs"
-                            />
-                        </div>
+                    </div>
+
+                    {/* Citation / Court Reference Notes */}
+                    <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-gray-700">Citation / Court Reference Note</Label>
+                        <Input
+                            placeholder="e.g. Paper Ticket #MT-889 / Court Order TC-12"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            className="h-8 text-xs"
+                        />
                     </div>
 
                     <DialogFooter className="border-t pt-3">
@@ -233,8 +364,8 @@ export const FineCreateModal: React.FC<FineCreateModalProps> = ({
                         <Button 
                             type="submit" 
                             size="sm" 
-                            disabled={submitting || !offenseId}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center gap-1.5"
+                            disabled={submitting || !offenseId || !licenseNumber || !vehicleNumber}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center gap-1.5 shadow-sm"
                         >
                             <Plus className="h-3.5 w-3.5" />
                             {submitting ? 'Issuing...' : 'Issue Citation'}
