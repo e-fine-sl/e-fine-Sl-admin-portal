@@ -1,176 +1,208 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import api from '@/lib/api';
-import { IssuedFine } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
-import { Search, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import { usePayments } from '@/hooks/usePayments';
+import { PaymentMetricsCards } from '@/components/payments/PaymentMetricsCards';
+import { PaymentFilters } from '@/components/payments/PaymentFilters';
+import { PaymentTable } from '@/components/payments/PaymentTable';
+import { PaymentDetailModal } from '@/components/payments/PaymentDetailModal';
+import { PaymentExportModal } from '@/components/payments/PaymentExportModal';
+import { PaymentRefundModal } from '@/components/payments/PaymentRefundModal';
+import { PaymentReconcileModal } from '@/components/payments/PaymentReconcileModal';
+import { PaymentService } from '@/services/paymentService';
+import { PaymentRecord } from '@/types/payment.types';
 import { toast } from 'sonner';
+import { RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function PaymentsPage() {
-    const [payments, setPayments] = useState<IssuedFine[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState('');
-    const [page, setPage] = useState(1);
-    const [total, setTotal] = useState(0);
-    const [totalRevenue, setTotalRevenue] = useState(0);
+    const {
+        payments,
+        metrics,
+        loading,
+        metricsLoading,
+        page,
+        setPage,
+        limit,
+        total,
+        pages,
+        search,
+        setSearch,
+        status,
+        setStatus,
+        province,
+        setProvince,
+        datePreset,
+        applyDatePreset,
+        startDate,
+        setStartDate,
+        endDate,
+        setEndDate,
+        sortBy,
+        sortOrder,
+        toggleSort,
+        refetchPayments,
+        refetchMetrics,
+        resetFilters
+    } = usePayments();
 
-    const fetchPayments = async () => {
+    // Modal Active States
+    const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+    const [isReconcileModalOpen, setIsReconcileModalOpen] = useState(false);
+
+    // Download Official PDF Receipt
+    const handleDownloadReceipt = async (paymentId: string) => {
         try {
-            setLoading(true);
-            const response = await api.get(`/admin/payments`, {
-                params: { page, limit: 20, search }
-            });
-            setPayments(response.data.data);
-            setTotal(response.data.total);
-
-            // Calculate total revenue from fetched payments
-            const revenue = response.data.data.reduce((sum: number, p: IssuedFine) => sum + p.amount, 0);
-            setTotalRevenue(revenue);
+            toast.loading('Generating official e-Fine receipt...');
+            const blob = await PaymentService.downloadReceipt(paymentId);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `e-Fine-Receipt-${paymentId.slice(-8).toUpperCase()}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode?.removeChild(link);
+            toast.dismiss();
+            toast.success('e-Fine Receipt downloaded successfully');
         } catch (error) {
-            console.error('Failed to fetch payments:', error);
-            toast.error('Failed to load payments');
-        } finally {
-            setLoading(false);
+            toast.dismiss();
+            console.error('Failed to download payment receipt:', error);
+            toast.error('Failed to generate e-Fine Receipt PDF');
         }
     };
 
-    useEffect(() => {
-        fetchPayments();
-    }, [page, search]);
+    // Modal Triggers
+    const handleOpenDetail = (payment: PaymentRecord) => {
+        setSelectedPayment(payment);
+        setIsDetailModalOpen(true);
+    };
+
+    const handleOpenReconcile = (payment: PaymentRecord) => {
+        setSelectedPayment(payment);
+        setIsReconcileModalOpen(true);
+    };
+
+    const handleOpenRefund = (payment: PaymentRecord) => {
+        setSelectedPayment(payment);
+        setIsRefundModalOpen(true);
+    };
+
+    const handleRefreshAll = () => {
+        refetchPayments();
+        refetchMetrics();
+        toast.info('Ledger & metrics refreshed');
+    };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-6 pb-12">
+            {/* Header Title Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold">Payments</h1>
-                    <p className="text-gray-500 mt-1">Track all fine payments</p>
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Payments & Revenue</h1>
+                    <p className="text-sm text-gray-500 mt-1">
+                        Track, reconcile, and audit national traffic fine collections & treasury settlements
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefreshAll}
+                        className="text-xs font-semibold text-gray-700 hover:bg-gray-100 flex items-center gap-1.5"
+                    >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Refresh Data
+                    </Button>
                 </div>
             </div>
 
-            {/* Summary Card */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600">Total Payments</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{total}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600">Current Page Revenue</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600">Average Payment</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(payments.length > 0 ? totalRevenue / payments.length : 0)}</div>
-                    </CardContent>
-                </Card>
-            </div>
+            {/* 1. KPI Financial Overview */}
+            <PaymentMetricsCards metrics={metrics} loading={metricsLoading} />
 
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle>Payment History ({total})</CardTitle>
-                        <div className="flex items-center gap-2">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                                <Input
-                                    placeholder="Search by license, vehicle..."
-                                    className="pl-9 w-80"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                        <div className="flex justify-center py-12">
-                            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b bg-gray-50">
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Payment Date</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">License Number</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Vehicle</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Offense</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Amount</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Payment ID</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {payments.map((payment) => (
-                                        <tr key={payment._id} className="border-b hover:bg-gray-50">
-                                            <td className="px-4 py-3 text-sm">
-                                                {payment.paidAt ? formatDateTime(payment.paidAt) : 'N/A'}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm font-medium">{payment.licenseNumber}</td>
-                                            <td className="px-4 py-3 text-sm">{payment.vehicleNumber}</td>
-                                            <td className="px-4 py-3 text-sm">{payment.offenseName}</td>
-                                            <td className="px-4 py-3 text-sm font-semibold text-green-600">
-                                                {formatCurrency(payment.amount)}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm font-mono text-xs">
-                                                {payment.paymentId || 'N/A'}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+            {/* 2. Multi-Dimensional Filters */}
+            <PaymentFilters
+                search={search}
+                onSearchChange={setSearch}
+                status={status}
+                onStatusChange={setStatus}
+                province={province}
+                onProvinceChange={setProvince}
+                datePreset={datePreset}
+                onDatePresetChange={applyDatePreset}
+                startDate={startDate}
+                onStartDateChange={setStartDate}
+                endDate={endDate}
+                onEndDateChange={setEndDate}
+                onResetFilters={resetFilters}
+                onOpenExport={() => setIsExportModalOpen(true)}
+                totalResults={total}
+            />
 
-                            {payments.length === 0 && (
-                                <div className="text-center py-12 text-gray-500">
-                                    No payments found
-                                </div>
-                            )}
+            {/* 3. Data Table */}
+            <PaymentTable
+                payments={payments}
+                loading={loading}
+                page={page}
+                pages={pages}
+                total={total}
+                limit={limit}
+                onPageChange={setPage}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={toggleSort}
+                onSelectPayment={handleOpenDetail}
+                onDownloadReceipt={handleDownloadReceipt}
+                onOpenReconcile={handleOpenReconcile}
+                onOpenRefund={handleOpenRefund}
+            />
 
-                            {/* Pagination */}
-                            {total > 15 && (
-                                <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                                    <p className="text-sm text-gray-600">
-                                        Showing {(page - 1) * 15 + 1} to {Math.min(page * 15, total)} of {total}
-                                    </p>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={page === 1}
-                                            onClick={() => setPage(page - 1)}
-                                        >
-                                            Previous
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={page * 15 >= total}
-                                            onClick={() => setPage(page + 1)}
-                                        >
-                                            Next
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            {/* 4. Deep Inspection Modal */}
+            <PaymentDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                payment={selectedPayment}
+                onDownloadReceipt={handleDownloadReceipt}
+                onOpenReconcile={handleOpenReconcile}
+            />
+
+            {/* 5. Treasury Export Modal */}
+            <PaymentExportModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                currentFilters={{
+                    search: search.trim() || undefined,
+                    status: status !== 'ALL' ? status : undefined,
+                    province: province !== 'ALL' ? province : undefined,
+                    startDate: startDate || undefined,
+                    endDate: endDate || undefined
+                }}
+                totalRecords={total}
+            />
+
+            {/* 6. PayHere Gateway Reconciliation Modal */}
+            <PaymentReconcileModal
+                isOpen={isReconcileModalOpen}
+                onClose={() => setIsReconcileModalOpen(false)}
+                payment={selectedPayment}
+                onVerifiedSuccess={() => {
+                    refetchPayments();
+                    refetchMetrics();
+                }}
+            />
+
+            {/* 7. Super Admin Refund Modal */}
+            <PaymentRefundModal
+                isOpen={isRefundModalOpen}
+                onClose={() => setIsRefundModalOpen(false)}
+                payment={selectedPayment}
+                onRefundSuccess={() => {
+                    refetchPayments();
+                    refetchMetrics();
+                }}
+            />
         </div>
     );
 }

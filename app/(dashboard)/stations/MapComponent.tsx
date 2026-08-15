@@ -21,7 +21,7 @@ const defaultCenter = {
 };
 
 // Only load libraries once, outside component to prevent re-renders
-const libraries: ("places" | "drawing" | "geometry" | "localContext" | "visualization")[] = ['places'];
+const libraries: ("places" | "drawing" | "geometry" | "visualization")[] = ['places'];
 
 export default function MapComponent({ position, onChange }: MapComponentProps) {
     const { isLoaded, loadError } = useJsApiLoader({

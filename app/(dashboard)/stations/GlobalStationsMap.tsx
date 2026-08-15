@@ -25,7 +25,7 @@ const defaultCenter = {
     lng: 80.7718,
 };
 
-const libraries: ("places" | "drawing" | "geometry" | "localContext" | "visualization")[] = ['places'];
+const libraries: ("places" | "drawing" | "geometry" | "visualization")[] = ['places'];
 
 // Haversine formula to calculate distance between two coordinates in km
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {

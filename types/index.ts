@@ -94,6 +94,8 @@ export interface Offense {
 }
 
 // Issued Fine Types
+export * from './payment.types';
+
 export interface IssuedFine {
     _id: string;
     licenseNumber: string;
@@ -103,7 +105,7 @@ export interface IssuedFine {
     amount: number;
     place: string;
     policeOfficerId: string;
-    status: 'PAID' | 'UNPAID';
+    status: 'PAID' | 'UNPAID' | 'REFUNDED' | 'DISPUTED';
     paymentId?: string;
     paidAt?: string;
     date: string;
