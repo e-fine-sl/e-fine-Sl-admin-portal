@@ -126,11 +126,11 @@ export const PaymentDisputeModal: React.FC<PaymentDisputeModalProps> = ({
                                 <SelectValue placeholder="Select dispute category" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="DRIVER_APPEAL">🚗 Driver Violation Appeal (Citizen Contest)</SelectItem>
-                                <SelectItem value="BANK_CHARGEBACK">🏦 Bank / Cardholder Chargeback Notice</SelectItem>
-                                <SelectItem value="ANPR_CAMERA_ERROR">📷 ANPR / Speed Camera Error</SelectItem>
-                                <SelectItem value="CLONED_PLATE">🆔 Cloned / Stolen Number Plate Claim</SelectItem>
-                                <SelectItem value="OTHER">⚖️ Administrative / Judicial Hold</SelectItem>
+                                <SelectItem value="DRIVER_APPEAL">Driver Violation Appeal (Citizen Contest)</SelectItem>
+                                <SelectItem value="BANK_CHARGEBACK">Bank / Cardholder Chargeback Notice</SelectItem>
+                                <SelectItem value="ANPR_CAMERA_ERROR">ANPR / Speed Camera Calibration Error</SelectItem>
+                                <SelectItem value="CLONED_PLATE">Cloned / Stolen Number Plate Claim</SelectItem>
+                                <SelectItem value="OTHER">Administrative / Judicial Hold</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
