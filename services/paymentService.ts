@@ -5,6 +5,7 @@ import {
     PaymentMetricsDTO, 
     GatewayVerificationDTO, 
     ProcessRefundDTO,
+    FlagDisputeDTO,
     PaymentRecord 
 } from '@/types/payment.types';
 
@@ -58,6 +59,14 @@ export const PaymentService = {
      */
     async processRefund(dto: ProcessRefundDTO): Promise<{ success: boolean; message: string; data?: any }> {
         const response = await api.post('/admin/payments/refund', dto);
+        return response.data;
+    },
+
+    /**
+     * Manually flag fine/payment as DISPUTED (Super Admin & Officers)
+     */
+    async flagDispute(dto: FlagDisputeDTO): Promise<{ success: boolean; message: string; data?: PaymentRecord }> {
+        const response = await api.post('/admin/payments/dispute', dto);
         return response.data;
     },
 

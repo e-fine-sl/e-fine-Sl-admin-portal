@@ -9,6 +9,7 @@ import { PaymentDetailModal } from '@/components/payments/PaymentDetailModal';
 import { PaymentExportModal } from '@/components/payments/PaymentExportModal';
 import { PaymentRefundModal } from '@/components/payments/PaymentRefundModal';
 import { PaymentReconcileModal } from '@/components/payments/PaymentReconcileModal';
+import { PaymentDisputeModal } from '@/components/payments/PaymentDisputeModal';
 import { PaymentService } from '@/services/paymentService';
 import { PaymentRecord } from '@/types/payment.types';
 import { toast } from 'sonner';
@@ -52,6 +53,7 @@ export default function PaymentsPage() {
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
     const [isReconcileModalOpen, setIsReconcileModalOpen] = useState(false);
+    const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
 
     // Download Official PDF Receipt
     const handleDownloadReceipt = async (paymentId: string) => {
@@ -88,6 +90,11 @@ export default function PaymentsPage() {
     const handleOpenRefund = (payment: PaymentRecord) => {
         setSelectedPayment(payment);
         setIsRefundModalOpen(true);
+    };
+
+    const handleOpenDispute = (payment: PaymentRecord) => {
+        setSelectedPayment(payment);
+        setIsDisputeModalOpen(true);
     };
 
     const handleRefreshAll = () => {
@@ -157,6 +164,7 @@ export default function PaymentsPage() {
                 onDownloadReceipt={handleDownloadReceipt}
                 onOpenReconcile={handleOpenReconcile}
                 onOpenRefund={handleOpenRefund}
+                onOpenDispute={handleOpenDispute}
             />
 
             {/* 4. Deep Inspection Modal */}
@@ -166,6 +174,7 @@ export default function PaymentsPage() {
                 payment={selectedPayment}
                 onDownloadReceipt={handleDownloadReceipt}
                 onOpenReconcile={handleOpenReconcile}
+                onOpenDispute={handleOpenDispute}
             />
 
             {/* 5. Treasury Export Modal */}
@@ -199,6 +208,17 @@ export default function PaymentsPage() {
                 onClose={() => setIsRefundModalOpen(false)}
                 payment={selectedPayment}
                 onRefundSuccess={() => {
+                    refetchPayments();
+                    refetchMetrics();
+                }}
+            />
+
+            {/* 8. Manual Dispute Modal */}
+            <PaymentDisputeModal
+                isOpen={isDisputeModalOpen}
+                onClose={() => setIsDisputeModalOpen(false)}
+                payment={selectedPayment}
+                onDisputeSuccess={() => {
                     refetchPayments();
                     refetchMetrics();
                 }}

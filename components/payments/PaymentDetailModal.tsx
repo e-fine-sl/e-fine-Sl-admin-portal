@@ -36,6 +36,7 @@ interface PaymentDetailModalProps {
     payment: PaymentRecord | null;
     onDownloadReceipt: (paymentId: string) => void;
     onOpenReconcile: (payment: PaymentRecord) => void;
+    onOpenDispute?: (payment: PaymentRecord) => void;
 }
 
 export const PaymentDetailModal: React.FC<PaymentDetailModalProps> = ({
@@ -44,6 +45,7 @@ export const PaymentDetailModal: React.FC<PaymentDetailModalProps> = ({
     payment,
     onDownloadReceipt,
     onOpenReconcile,
+    onOpenDispute,
 }) => {
     const [fullDetail, setFullDetail] = useState<PaymentRecord | null>(payment);
     const [loading, setLoading] = useState(false);
@@ -215,6 +217,15 @@ export const PaymentDetailModal: React.FC<PaymentDetailModalProps> = ({
                                     <strong>Reason:</strong> {current.disputeReason || 'Administrative resolution'}
                                 </div>
                             )}
+                            {(current.status || '').toUpperCase() === 'DISPUTED' && (
+                                <div className="text-purple-900 font-sans mt-1 bg-purple-50 p-2.5 rounded-lg border border-purple-200 space-y-1">
+                                    <div className="font-bold flex items-center gap-1 text-purple-700">
+                                        <ShieldAlert className="h-4 w-4" />
+                                        Dispute Audit Record
+                                    </div>
+                                    <div><strong>Dispute Reason / Ground:</strong> {current.disputeReason || 'Under administrative / legal review.'}</div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -228,8 +239,22 @@ export const PaymentDetailModal: React.FC<PaymentDetailModalProps> = ({
                             className="text-xs flex items-center gap-1.5 text-indigo-700 border-indigo-200 hover:bg-indigo-50"
                         >
                             <ShieldCheck className="h-3.5 w-3.5" />
-                            Verify with Gateway
+                            Verify Gateway
                         </Button>
+                        {onOpenDispute && (current.status || '').toUpperCase() !== 'DISPUTED' && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    onClose();
+                                    onOpenDispute(current);
+                                }}
+                                className="text-xs flex items-center gap-1.5 text-purple-700 border-purple-200 hover:bg-purple-50"
+                            >
+                                <ShieldAlert className="h-3.5 w-3.5" />
+                                Flag Dispute
+                            </Button>
+                        )}
                         <Button
                             variant="default"
                             size="sm"
@@ -237,7 +262,7 @@ export const PaymentDetailModal: React.FC<PaymentDetailModalProps> = ({
                             className="text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
                         >
                             <Download className="h-3.5 w-3.5" />
-                            Download PDF Receipt
+                            Download Receipt
                         </Button>
                     </div>
                     <Button variant="ghost" size="sm" onClick={onClose} className="text-xs">

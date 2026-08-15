@@ -11,6 +11,7 @@ import {
     Download, 
     ArrowUpDown, 
     ShieldCheck, 
+    ShieldAlert,
     AlertCircle, 
     RotateCcw, 
     FileText, 
@@ -36,6 +37,7 @@ interface PaymentTableProps {
     onDownloadReceipt: (paymentId: string) => void;
     onOpenReconcile: (payment: PaymentRecord) => void;
     onOpenRefund: (payment: PaymentRecord) => void;
+    onOpenDispute?: (payment: PaymentRecord) => void;
 }
 
 export const PaymentTable: React.FC<PaymentTableProps> = ({
@@ -53,6 +55,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
     onDownloadReceipt,
     onOpenReconcile,
     onOpenRefund,
+    onOpenDispute,
 }) => {
     const { user } = useAuth();
     const isSuperAdmin = user?.role === USER_ROLES.SUPER_ADMIN;
@@ -244,6 +247,19 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
                                                 >
                                                     <ShieldCheck className="h-4 w-4" />
                                                 </Button>
+
+                                                {/* Flag as Disputed (Admins) */}
+                                                {onOpenDispute && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-gray-500 hover:text-purple-600 hover:bg-purple-50"
+                                                        title="Flag Fine / Payment as Disputed"
+                                                        onClick={() => onOpenDispute(payment)}
+                                                    >
+                                                        <ShieldAlert className="h-4 w-4" />
+                                                    </Button>
+                                                )}
 
                                                 {/* Super Admin Refund */}
                                                 {isSuperAdmin && payment.status === 'PAID' && (

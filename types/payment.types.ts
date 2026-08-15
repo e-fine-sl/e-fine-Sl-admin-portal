@@ -141,3 +141,10 @@ export interface ProcessRefundDTO {
     treasuryReference?: string;
     restoreDemeritPoints: boolean;
 }
+
+export interface FlagDisputeDTO {
+    paymentId: string;
+    reason: string;
+    disputeCategory?: 'DRIVER_APPEAL' | 'BANK_CHARGEBACK' | 'ANPR_CAMERA_ERROR' | 'CLONED_PLATE' | 'OTHER';
+    notes?: string;
+}
