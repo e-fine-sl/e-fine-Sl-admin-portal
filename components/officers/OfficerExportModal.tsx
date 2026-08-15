@@ -39,16 +39,16 @@ export const OfficerExportModal: React.FC<OfficerExportModalProps> = ({
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `eFine_Officer_Roster_${new Date().toISOString().slice(0, 10)}.${format}`);
+            link.setAttribute('download', `eFine_Officer_List_${new Date().toISOString().slice(0, 10)}.${format}`);
             document.body.appendChild(link);
             link.click();
             link.parentNode?.removeChild(link);
 
-            toast.success(`Export completed (${format.toUpperCase()})`);
+            toast.success(`Download completed (${format.toUpperCase()})`);
             onClose();
         } catch (error) {
             console.error('Export failed:', error);
-            toast.error('Failed to export officer directory');
+            toast.error('Failed to download officer list');
         } finally {
             setExporting(false);
         }
@@ -64,10 +64,10 @@ export const OfficerExportModal: React.FC<OfficerExportModalProps> = ({
                         </div>
                         <div>
                             <DialogTitle className="text-base font-bold">
-                                Export Police Officer Roster
+                                Download Police Officer List
                             </DialogTitle>
                             <DialogDescription className="text-xs text-gray-500">
-                                Download filtered officer registry and station assignment directory.
+                                Download filtered police officer list and station assignments.
                             </DialogDescription>
                         </div>
                     </div>
@@ -76,7 +76,7 @@ export const OfficerExportModal: React.FC<OfficerExportModalProps> = ({
                 <div className="space-y-4 py-3 text-sm">
                     {/* Filter Summary */}
                     <div className="bg-gray-50 p-3 rounded-lg border text-xs space-y-1">
-                        <div className="font-semibold text-gray-700">Active Export Scope:</div>
+                        <div className="font-semibold text-gray-700">Active Download Scope:</div>
                         <div className="text-gray-600">Total matched officers: <strong className="text-gray-900">{totalRecords.toLocaleString()}</strong></div>
                         <div className="text-gray-600">Station filter: <span className="font-mono">{currentFilters.station || 'All Stations'}</span></div>
                         <div className="text-gray-600">Rank filter: <span className="font-mono">{currentFilters.position || 'All Ranks'}</span></div>
@@ -126,7 +126,7 @@ export const OfficerExportModal: React.FC<OfficerExportModalProps> = ({
                         disabled={exporting}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                     >
-                        {exporting ? 'Exporting...' : 'Download Export'}
+                        {exporting ? 'Generating...' : 'Download File'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

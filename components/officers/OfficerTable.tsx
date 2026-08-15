@@ -119,7 +119,7 @@ export const OfficerTable: React.FC<OfficerTableProps> = ({
             <CardHeader className="pb-3 flex flex-row items-center justify-between border-b bg-gray-50/50">
                 <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
                     <Users className="h-4 w-4 text-blue-600" />
-                    Officer Registry & Duty Roster ({total.toLocaleString()} officers)
+                    Police Officer Directory ({total.toLocaleString()} officers)
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0">

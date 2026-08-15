@@ -82,7 +82,7 @@ export const OfficerFilters: React.FC<OfficerFiltersProps> = ({
                         className="text-xs h-9 px-3 font-semibold text-gray-700 hover:bg-gray-100 flex items-center gap-1.5"
                     >
                         <Download className="h-3.5 w-3.5 text-blue-600" />
-                        Export Roster
+                        Download Officer List
                     </Button>
 
                     {canCreate && (
