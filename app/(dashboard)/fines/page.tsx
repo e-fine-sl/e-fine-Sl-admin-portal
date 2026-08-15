@@ -111,9 +111,9 @@ export default function FinesPage() {
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Fines & Citations</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Traffic Fines</h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        Review, issue, and manage national traffic citations, dispute claims, and revenue settlement
+                        Review, issue, and manage traffic fines, dispute claims, and revenue settlement
                     </p>
                 </div>
                 <div className="flex items-center gap-2">

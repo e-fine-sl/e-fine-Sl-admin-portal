@@ -11,7 +11,7 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import { FineService } from '@/services/fineService';
-import { Search, RotateCcw, Download, Plus, Calendar, Building2, ChevronDown, Check, X } from 'lucide-react';
+import { Search, RotateCcw, Download, Plus, Calendar, Building2, ChevronDown, Check, X, Filter } from 'lucide-react';
 import { FineStatus } from '@/types/fine.types';
 
 interface FineFiltersProps {
@@ -84,28 +84,60 @@ export const FineFilters: React.FC<FineFiltersProps> = ({
         );
     }, [stations, stationQuery]);
 
-    const hasActiveFilters = search || status !== 'ALL' || policeStation !== 'ALL' || startDate || endDate;
+    const hasActiveFilters = Boolean(search || status !== 'ALL' || policeStation !== 'ALL' || startDate || endDate);
 
     return (
         <div className="bg-white p-4 rounded-xl border shadow-sm space-y-3">
-            {/* Top Bar: Search, Date Range, Status & Actions */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            {/* Row 1: Search Bar & Primary Actions */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 {/* Search Input */}
-                <div className="relative flex-1 min-w-[220px]">
+                <div className="relative flex-1 min-w-[260px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
-                        placeholder="Search by license #, vehicle plate, offense, place, officer..."
+                        placeholder="Search by license #, vehicle plate, offense, location, officer ID..."
                         value={search}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="pl-9 h-9 text-xs"
+                        className="pl-9 h-9 text-xs w-full bg-gray-50/50 focus:bg-white"
                     />
                 </div>
 
-                {/* Filters Row */}
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onOpenExport}
+                        className="h-9 text-xs font-semibold text-gray-700 border-gray-300 hover:bg-gray-50 flex items-center gap-1.5"
+                    >
+                        <Download className="h-3.5 w-3.5 text-blue-600" />
+                        Download Fines Ledger
+                    </Button>
+
+                    {canCreate && (
+                        <Button
+                            size="sm"
+                            onClick={onOpenCreate}
+                            className="h-9 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 shadow-sm"
+                        >
+                            <Plus className="h-3.5 w-3.5" />
+                            Issue Fine
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            {/* Row 2: Filter Toolbar Strip (Dates, Status, Station, Reset) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t text-xs">
                 <div className="flex flex-wrap items-center gap-2">
+                    {/* Filter Icon Label */}
+                    <div className="text-gray-400 font-semibold flex items-center gap-1 mr-1 text-[11px] uppercase tracking-wider hidden md:flex">
+                        <Filter className="h-3.5 w-3.5 text-gray-500" />
+                        Filters:
+                    </div>
+
                     {/* Date Pickers */}
-                    <div className="flex items-center gap-1.5 bg-gray-50 border rounded-lg px-2 py-1">
-                        <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                    <div className="flex items-center gap-1 bg-gray-50 border rounded-md px-2 py-1 h-9">
+                        <Calendar className="h-3.5 w-3.5 text-gray-400 mr-1" />
                         <input
                             type="date"
                             value={startDate}
@@ -113,7 +145,7 @@ export const FineFilters: React.FC<FineFiltersProps> = ({
                             className="bg-transparent text-xs text-gray-700 outline-none w-28"
                             title="Start Date"
                         />
-                        <span className="text-gray-400 text-xs">to</span>
+                        <span className="text-gray-400 text-xs px-0.5">to</span>
                         <input
                             type="date"
                             value={endDate}
@@ -127,7 +159,7 @@ export const FineFilters: React.FC<FineFiltersProps> = ({
                     <div className="w-36">
                         <Select value={status} onValueChange={(v) => onStatusChange(v as any)}>
                             <SelectTrigger className="h-9 text-xs">
-                                <SelectValue placeholder="Payment Status" />
+                                <SelectValue placeholder="All Statuses" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="ALL">All Statuses</SelectItem>
@@ -161,7 +193,7 @@ export const FineFilters: React.FC<FineFiltersProps> = ({
 
                         {/* Searchable dropdown menu */}
                         {isStationOpen && (
-                            <div className="absolute right-0 top-10 w-64 bg-white rounded-lg border shadow-lg z-50 p-2 space-y-1.5 text-xs">
+                            <div className="absolute left-0 top-10 w-64 bg-white rounded-lg border shadow-lg z-50 p-2 space-y-1.5 text-xs">
                                 <div className="relative">
                                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                                     <Input
@@ -239,45 +271,15 @@ export const FineFilters: React.FC<FineFiltersProps> = ({
                             className="h-9 text-xs text-gray-600 hover:text-gray-900 flex items-center gap-1"
                         >
                             <RotateCcw className="h-3.5 w-3.5" />
-                            Reset
-                        </Button>
-                    )}
-
-                    {/* Download Ledger Button */}
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={onOpenExport}
-                        className="h-9 text-xs font-semibold text-gray-700 border-gray-300 hover:bg-gray-50 flex items-center gap-1.5"
-                    >
-                        <Download className="h-3.5 w-3.5 text-blue-600" />
-                        Download Fines Ledger
-                    </Button>
-
-                    {/* Issue Fine Button */}
-                    {canCreate && (
-                        <Button
-                            size="sm"
-                            onClick={onOpenCreate}
-                            className="h-9 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 shadow-sm"
-                        >
-                            <Plus className="h-3.5 w-3.5" />
-                            Issue Citation
+                            Reset Filters
                         </Button>
                     )}
                 </div>
-            </div>
 
-            {/* Results Count & Filter Scope */}
-            <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t">
-                <div>
-                    Found <strong className="text-gray-900">{totalResults.toLocaleString()}</strong> traffic citation records matching active filters.
+                {/* Results Count */}
+                <div className="text-gray-500 text-xs py-1">
+                    Found <strong className="text-gray-900">{totalResults.toLocaleString()}</strong> traffic fines
                 </div>
-                {hasActiveFilters && (
-                    <div className="text-blue-600 font-medium">
-                        Filtered view active {policeStation !== 'ALL' && `• Station: ${policeStation}`}
-                    </div>
-                )}
             </div>
         </div>
     );
