@@ -66,6 +66,14 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
                         Paid
                     </Badge>
                 );
+            case 'UNPAID':
+            case 'PENDING':
+                return (
+                    <Badge className="bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 flex items-center gap-1 font-medium">
+                        <AlertCircle className="h-3 w-3 text-rose-600" />
+                        Unpaid
+                    </Badge>
+                );
             case 'REFUNDED':
                 return (
                     <Badge className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 flex items-center gap-1 font-medium">
@@ -75,8 +83,8 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
                 );
             case 'DISPUTED':
                 return (
-                    <Badge className="bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 flex items-center gap-1 font-medium">
-                        <AlertCircle className="h-3 w-3 text-rose-600" />
+                    <Badge className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 flex items-center gap-1 font-medium">
+                        <AlertCircle className="h-3 w-3 text-purple-600" />
                         Disputed
                     </Badge>
                 );
@@ -139,10 +147,12 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
                                         {/* Date */}
                                         <td className="px-4 py-3.5 whitespace-nowrap">
                                             <div className="font-medium text-gray-900">
-                                                {payment.paidAt ? formatDateTime(payment.paidAt) : formatDateTime(payment.date)}
+                                                {payment.status === 'PAID' && payment.paidAt
+                                                    ? formatDateTime(payment.paidAt) 
+                                                    : formatDateTime(payment.date)}
                                             </div>
                                             <div className="text-xs text-gray-400">
-                                                Issued: {formatDateTime(payment.date)}
+                                                {payment.status === 'PAID' ? `Issued: ${formatDateTime(payment.date)}` : 'Awaiting Payment'}
                                             </div>
                                         </td>
 
@@ -168,11 +178,11 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
 
                                         {/* Amount */}
                                         <td className="px-4 py-3.5 whitespace-nowrap">
-                                            <div className="font-bold text-emerald-600">
+                                            <div className={`font-bold ${payment.status === 'PAID' ? 'text-emerald-600' : 'text-gray-900'}`}>
                                                 {formatCurrency(payment.amount)}
                                             </div>
                                             <div className="text-[11px] text-gray-400">
-                                                {payment.paymentMethod || 'PAYHERE_GATEWAY'}
+                                                {payment.status === 'PAID' ? (payment.paymentMethod || 'PAYHERE_GATEWAY') : 'Unpaid Fine'}
                                             </div>
                                         </td>
 

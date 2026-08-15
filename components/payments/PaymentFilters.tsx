@@ -114,8 +114,9 @@ export const PaymentFilters: React.FC<PaymentFiltersProps> = ({
                             <SelectValue placeholder="Payment Status" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="ALL">All Statuses</SelectItem>
-                            <SelectItem value="PAID">Paid / Settled</SelectItem>
+                            <SelectItem value="ALL">All Statuses (Paid & Unpaid)</SelectItem>
+                            <SelectItem value="PAID">Paid / Cleared</SelectItem>
+                            <SelectItem value="UNPAID">Unpaid / Pending</SelectItem>
                             <SelectItem value="REFUNDED">Refunded</SelectItem>
                             <SelectItem value="DISPUTED">Disputed</SelectItem>
                         </SelectContent>

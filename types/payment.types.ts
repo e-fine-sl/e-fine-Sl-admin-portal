@@ -105,6 +105,8 @@ export interface PaymentMetricsDTO {
     todayPaymentsCount: number;
     thisMonthRevenue: number;
     thisMonthPaymentsCount: number;
+    unpaidRevenue?: number;
+    unpaidPaymentsCount?: number;
     averagePayment: number;
     collectionEfficiencyRate: number; // e.g. 84.5%
     revenueByProvince: Array<{ province: string; amount: number; count: number }>;

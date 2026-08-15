@@ -86,10 +86,12 @@ export const PaymentDetailModal: React.FC<PaymentDetailModalProps> = ({
                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                     : current.status === 'REFUNDED'
                                     ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                    : current.status === 'DISPUTED'
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200'
                                     : 'bg-rose-50 text-rose-700 border-rose-200'
                             }
                         >
-                            {current.status}
+                            {current.status === 'UNPAID' ? 'UNPAID / PENDING' : current.status}
                         </Badge>
                     </div>
                 </DialogHeader>
@@ -98,12 +100,16 @@ export const PaymentDetailModal: React.FC<PaymentDetailModalProps> = ({
                     {/* Financial Summary Card */}
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border flex items-center justify-between">
                         <div>
-                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Settlement Amount</span>
-                            <div className="text-2xl font-black text-emerald-600">
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                {current.status === 'PAID' ? 'Settlement Amount' : 'Fine Amount Due'}
+                            </span>
+                            <div className={`text-2xl font-black ${current.status === 'PAID' ? 'text-emerald-600' : 'text-rose-600'}`}>
                                 {formatCurrency(current.amount)}
                             </div>
                             <span className="text-xs text-gray-500">
-                                Method: <strong className="text-gray-700">{current.paymentMethod || 'PAYHERE_GATEWAY'}</strong>
+                                Method: <strong className="text-gray-700">
+                                    {current.status === 'PAID' ? (current.paymentMethod || 'PAYHERE_GATEWAY') : 'Awaiting Payment'}
+                                </strong>
                             </span>
                         </div>
                         <div className="text-right">
@@ -112,7 +118,10 @@ export const PaymentDetailModal: React.FC<PaymentDetailModalProps> = ({
                                 {current.paidAt ? formatDateTime(current.paidAt) : 'Pending Settlement'}
                             </div>
                             <div className="text-xs text-gray-400 font-mono mt-0.5">
-                                Ref: {current.paymentId || current.gatewayPaymentId || 'N/A'}
+                                {current.status === 'PAID' 
+                                    ? `Ref: ${current.paymentId || current.gatewayPaymentId || 'N/A'}`
+                                    : `Issued: ${formatDateTime(current.date)}`
+                                }
                             </div>
                         </div>
                     </div>

@@ -52,6 +52,26 @@ export const PaymentMetricsCards: React.FC<PaymentMetricsCardsProps> = ({ metric
                 </CardContent>
             </Card>
 
+            {/* Outstanding / Unpaid Fines */}
+            <Card className="shadow-sm border-l-4 border-l-rose-500 hover:shadow-md transition-shadow">
+                <CardHeader className="pb-1 pt-4 flex flex-row items-center justify-between">
+                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        Outstanding Fines
+                    </CardTitle>
+                    <div className="p-1.5 bg-rose-50 text-rose-600 rounded-lg">
+                        <CreditCard className="h-4 w-4" />
+                    </div>
+                </CardHeader>
+                <CardContent className="pb-4">
+                    <div className="text-xl font-bold text-rose-600">
+                        {formatCurrency(metrics.unpaidRevenue || 0)}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                        {(metrics.unpaidPaymentsCount || 0).toLocaleString()} pending settlements
+                    </p>
+                </CardContent>
+            </Card>
+
             {/* Today's Collections */}
             <Card className="shadow-sm border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
                 <CardHeader className="pb-1 pt-4 flex flex-row items-center justify-between">
@@ -92,26 +112,6 @@ export const PaymentMetricsCards: React.FC<PaymentMetricsCardsProps> = ({ metric
                 </CardContent>
             </Card>
 
-            {/* Average Fine Payment */}
-            <Card className="shadow-sm border-l-4 border-l-amber-500 hover:shadow-md transition-shadow">
-                <CardHeader className="pb-1 pt-4 flex flex-row items-center justify-between">
-                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                        Average Fine
-                    </CardTitle>
-                    <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
-                        <CreditCard className="h-4 w-4" />
-                    </div>
-                </CardHeader>
-                <CardContent className="pb-4">
-                    <div className="text-xl font-bold text-gray-900">
-                        {formatCurrency(metrics.averagePayment)}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                        Per violation settlement
-                    </p>
-                </CardContent>
-            </Card>
-
             {/* Collection Efficiency Rate */}
             <Card className="shadow-sm border-l-4 border-l-purple-500 hover:shadow-md transition-shadow">
                 <CardHeader className="pb-1 pt-4 flex flex-row items-center justify-between">
@@ -127,7 +127,7 @@ export const PaymentMetricsCards: React.FC<PaymentMetricsCardsProps> = ({ metric
                         {metrics.collectionEfficiencyRate}%
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                        Paid within statutory limit
+                        Settled compliance rate
                     </p>
                 </CardContent>
             </Card>
