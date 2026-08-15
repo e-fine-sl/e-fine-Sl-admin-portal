@@ -115,7 +115,7 @@ export const DriverFilters: React.FC<DriverFiltersProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="ALL">All Demerit Levels</SelectItem>
-                            <SelectItem value="HIGH_RISK">⚠️ High Risk (Warning / Danger)</SelectItem>
+                            <SelectItem value="HIGH_RISK">High Risk (Warning / Danger)</SelectItem>
                             <SelectItem value="EXCELLENT">Excellent (20 - 24 pts)</SelectItem>
                             <SelectItem value="GOOD">Good (15 - 19 pts)</SelectItem>
                             <SelectItem value="FAIR">Fair (10 - 14 pts)</SelectItem>

@@ -72,8 +72,19 @@ export const DriverDetailModal: React.FC<DriverDetailModalProps> = ({
                 <DialogHeader className="border-b pb-3">
                     <div className="flex items-center justify-between pr-6">
                         <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-base flex-shrink-0">
-                                {driver.name.slice(0, 2).toUpperCase()}
+                            <div className="w-12 h-12 rounded-full overflow-hidden border bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-base flex-shrink-0 shadow-sm">
+                                {detail?.profileImage || driver.profileImage ? (
+                                    <img 
+                                        src={detail?.profileImage || driver.profileImage} 
+                                        alt={driver.name} 
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            (e.target as HTMLElement).style.display = 'none';
+                                        }}
+                                    />
+                                ) : (
+                                    <span>{driver.name.slice(0, 2).toUpperCase()}</span>
+                                )}
                             </div>
                             <div>
                                 <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -242,11 +253,11 @@ export const DriverDetailModal: React.FC<DriverDetailModalProps> = ({
                             variant="outline"
                             size="sm"
                             asChild
-                            className="text-xs flex items-center gap-1.5 text-blue-600 hover:bg-blue-50"
+                            className="text-xs flex items-center gap-1.5 text-blue-600 hover:bg-blue-50 border-blue-200"
                         >
                             <Link href={`/drivers/${driver._id}`}>
                                 <ExternalLink className="h-3.5 w-3.5" />
-                                Full Dossier Page
+                                View Full Profile
                             </Link>
                         </Button>
                     </div>

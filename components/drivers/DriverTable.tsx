@@ -164,8 +164,19 @@ export const DriverTable: React.FC<DriverTableProps> = ({
                                         {/* Driver Name & Contact */}
                                         <td className="px-4 py-3.5 whitespace-nowrap">
                                             <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                                    {driver.name.slice(0, 2).toUpperCase()}
+                                                <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0 border">
+                                                    {driver.profileImage ? (
+                                                        <img 
+                                                            src={driver.profileImage} 
+                                                            alt={driver.name} 
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                (e.target as HTMLElement).style.display = 'none';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <span>{driver.name.slice(0, 2).toUpperCase()}</span>
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <div className="font-semibold text-gray-900">{driver.name}</div>
