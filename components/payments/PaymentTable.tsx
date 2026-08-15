@@ -58,7 +58,8 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
     const isSuperAdmin = user?.role === USER_ROLES.SUPER_ADMIN;
 
     const renderStatusBadge = (status: string) => {
-        switch (status) {
+        const normalized = (status || '').toUpperCase();
+        switch (normalized) {
             case 'PAID':
                 return (
                     <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 flex items-center gap-1 font-medium">
@@ -89,7 +90,12 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
                     </Badge>
                 );
             default:
-                return <Badge variant="outline">{status}</Badge>;
+                return (
+                    <Badge className="bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 flex items-center gap-1 font-medium">
+                        <AlertCircle className="h-3 w-3 text-rose-600" />
+                        {status}
+                    </Badge>
+                );
         }
     };
 

@@ -82,16 +82,16 @@ export const PaymentDetailModal: React.FC<PaymentDetailModalProps> = ({
                         </div>
                         <Badge 
                             className={
-                                current.status === 'PAID' 
+                                (current.status || '').toUpperCase() === 'PAID' 
                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                    : current.status === 'REFUNDED'
+                                    : (current.status || '').toUpperCase() === 'REFUNDED'
                                     ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                    : current.status === 'DISPUTED'
+                                    : (current.status || '').toUpperCase() === 'DISPUTED'
                                     ? 'bg-purple-50 text-purple-700 border-purple-200'
                                     : 'bg-rose-50 text-rose-700 border-rose-200'
                             }
                         >
-                            {current.status === 'UNPAID' ? 'UNPAID / PENDING' : current.status}
+                            {(current.status || '').toUpperCase() === 'UNPAID' ? 'UNPAID / PENDING' : current.status}
                         </Badge>
                     </div>
                 </DialogHeader>
