@@ -98,6 +98,26 @@ export interface DriverDetailResponseDTO {
     }>;
 }
 
+export interface DmtVerificationResultDTO {
+    success: boolean;
+    found?: boolean;
+    nicMatch?: boolean;
+    dmtUnreachable?: boolean;
+    message: string;
+    data?: {
+        licenseNumber: string;
+        nic: string;
+        fullName: string;
+        dateOfBirth?: string;
+        address?: string;
+        licenseIssueDate?: string;
+        licenseExpiryDate?: string;
+        licenseStatus?: string;
+        vehicleClasses?: VehicleClass[];
+        issuingOffice?: string;
+    };
+}
+
 export interface CreateDriverDTO {
     name: string;
     nic: string;
@@ -108,8 +128,12 @@ export interface CreateDriverDTO {
     vehicleNumber?: string;
     city?: string;
     addressLine1?: string;
+    addressLine2?: string;
+    postalCode?: string;
     licenseExpiryDate?: string;
+    licenseIssueDate?: string;
     dateOfBirth?: string;
+    vehicleClasses?: VehicleClass[];
 }
 
 export interface UpdateDriverDTO {

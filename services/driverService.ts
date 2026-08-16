@@ -9,7 +9,8 @@ import {
     SuspendDriverDTO,
     AdjustDemeritDTO,
     ResetDriverCredentialsDTO,
-    DriverListResponseDTO
+    DriverListResponseDTO,
+    DmtVerificationResultDTO
 } from '@/types/driver.types';
 
 /**
@@ -112,6 +113,27 @@ export const DriverService = {
      */
     async deleteDriver(id: string): Promise<{ success: boolean; message: string; isSoftDeleted?: boolean }> {
         const response = await api.delete(`/admin/drivers/${id}`);
+        return response.data;
+    },
+
+    /**
+     * Real-time uniqueness check for NIC, License, Email, Phone
+     */
+    async checkFieldExists(field: string, value: string, role = 'driver'): Promise<{ exists: boolean; message: string }> {
+        const response = await api.get<{ success: boolean; exists: boolean; message: string }>('/auth/check-exists', {
+            params: { field, value, role }
+        });
+        return response.data;
+    },
+
+    /**
+     * Real-time DMT (Department of Motor Traffic) legal driving license verification
+     */
+    async verifyLicenseWithDMT(licenseNumber: string, nic: string): Promise<DmtVerificationResultDTO> {
+        const response = await api.post<DmtVerificationResultDTO>('/auth/verify-dmt', {
+            licenseNumber,
+            nic
+        });
         return response.data;
     }
 };
