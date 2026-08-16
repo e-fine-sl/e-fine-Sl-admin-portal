@@ -21,8 +21,6 @@ import {
     CheckCircle2, 
     AlertCircle, 
     Loader2, 
-    Car, 
-    Check, 
     Sparkles, 
     Info 
 } from 'lucide-react';
@@ -49,6 +47,7 @@ export const DriverCreateModal: React.FC<DriverCreateModalProps> = ({
     const [vehicleNumber, setVehicleNumber] = useState('');
     const [city, setCity] = useState('');
     const [addressLine1, setAddressLine1] = useState('');
+    const [addressLine2, setAddressLine2] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     // Real-time Field Existence / Uniqueness State
@@ -102,6 +101,7 @@ export const DriverCreateModal: React.FC<DriverCreateModalProps> = ({
             setVehicleNumber('');
             setCity('');
             setAddressLine1('');
+            setAddressLine2('');
             setNicStatus('idle');
             setNicError(null);
             setLicenseStatus('idle');
@@ -116,6 +116,25 @@ export const DriverCreateModal: React.FC<DriverCreateModalProps> = ({
             setDmtData(null);
         }
     }, [isOpen]);
+
+    // Helper to parse DMT address string into separate AddressLine1, AddressLine2, and City
+    const parseDmtAddress = (rawAddress: string) => {
+        if (!rawAddress) return { line1: '', line2: '', cityPart: '' };
+        const parts = rawAddress.split(',').map(p => p.trim()).filter(Boolean);
+        if (parts.length === 1) {
+            return { line1: parts[0], line2: '', cityPart: '' };
+        } else if (parts.length === 2) {
+            return { line1: parts[0], line2: parts[1], cityPart: '' };
+        } else if (parts.length === 3) {
+            return { line1: parts[0], line2: parts[1], cityPart: parts[2] };
+        } else {
+            return {
+                line1: parts.slice(0, 2).join(', '),
+                line2: parts[2],
+                cityPart: parts[parts.length - 1]
+            };
+        }
+    };
 
     // ── DMT Verification Routine ──────────────────────────────────────────────
     const performDmtCheck = async (licNo: string, nationalId: string) => {
@@ -140,12 +159,15 @@ export const DriverCreateModal: React.FC<DriverCreateModalProps> = ({
                 setDmtError(null);
                 setDmtData(res.data);
 
-                // If driver name is empty or default, suggest DMT full name
+                // Auto-suggest name and parsed address if inputs are empty
                 if (!name.trim() && res.data.fullName) {
                     setName(res.data.fullName);
                 }
-                if (!addressLine1.trim() && res.data.address) {
-                    setAddressLine1(res.data.address);
+                if (res.data.address) {
+                    const parsed = parseDmtAddress(res.data.address);
+                    if (!addressLine1.trim() && parsed.line1) setAddressLine1(parsed.line1);
+                    if (!addressLine2.trim() && parsed.line2) setAddressLine2(parsed.line2);
+                    if (!city.trim() && parsed.cityPart) setCity(parsed.cityPart);
                 }
             } else if (res.dmtUnreachable) {
                 setIsDmtVerified(false);
@@ -335,7 +357,12 @@ export const DriverCreateModal: React.FC<DriverCreateModalProps> = ({
     const handleApplyDmtDetails = () => {
         if (dmtData) {
             if (dmtData.fullName) setName(dmtData.fullName);
-            if (dmtData.address) setAddressLine1(dmtData.address);
+            if (dmtData.address) {
+                const parsed = parseDmtAddress(dmtData.address);
+                if (parsed.line1) setAddressLine1(parsed.line1);
+                if (parsed.line2) setAddressLine2(parsed.line2);
+                if (parsed.cityPart) setCity(parsed.cityPart);
+            }
             toast.success('Applied official legal details from DMT records.');
         }
     };
@@ -376,6 +403,7 @@ export const DriverCreateModal: React.FC<DriverCreateModalProps> = ({
                 vehicleNumber: vehicleNumber.toUpperCase().trim() || undefined,
                 city: city.trim() || undefined,
                 addressLine1: addressLine1.trim() || undefined,
+                addressLine2: addressLine2.trim() || undefined,
                 licenseExpiryDate: dmtData?.licenseExpiryDate || undefined,
                 licenseIssueDate: dmtData?.licenseIssueDate || undefined,
                 dateOfBirth: dmtData?.dateOfBirth || undefined,
@@ -606,6 +634,28 @@ export const DriverCreateModal: React.FC<DriverCreateModalProps> = ({
                         <p className="text-[10px] text-gray-400">Motorist can use this password to sign into the e-Fine SL Mobile App.</p>
                     </div>
 
+                    {/* Address Line 1 & Address Line 2 (Separated) */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <Label className="text-xs font-semibold text-gray-700">Address Line 1 (Street / House No)</Label>
+                            <Input
+                                placeholder="e.g. No. 45, Juwangahawaththa"
+                                value={addressLine1}
+                                onChange={(e) => setAddressLine1(e.target.value)}
+                                className="h-8 text-xs"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs font-semibold text-gray-700">Address Line 2 (Area / Locality)</Label>
+                            <Input
+                                placeholder="e.g. Kithulampitiya"
+                                value={addressLine2}
+                                onChange={(e) => setAddressLine2(e.target.value)}
+                                className="h-8 text-xs"
+                            />
+                        </div>
+                    </div>
+
                     {/* Primary Vehicle Plate & City / District */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
@@ -626,17 +676,6 @@ export const DriverCreateModal: React.FC<DriverCreateModalProps> = ({
                                 className="h-8 text-xs"
                             />
                         </div>
-                    </div>
-
-                    {/* Residential Address */}
-                    <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-gray-700">Residential Address</Label>
-                        <Input
-                            placeholder="Street address line..."
-                            value={addressLine1}
-                            onChange={(e) => setAddressLine1(e.target.value)}
-                            className="h-8 text-xs"
-                        />
                     </div>
 
                     <DialogFooter className="border-t pt-3 flex items-center justify-between">

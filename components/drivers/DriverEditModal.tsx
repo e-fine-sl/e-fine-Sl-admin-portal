@@ -35,6 +35,7 @@ export const DriverEditModal: React.FC<DriverEditModalProps> = ({
     const [email, setEmail] = useState('');
     const [vehicleNumber, setVehicleNumber] = useState('');
     const [addressLine1, setAddressLine1] = useState('');
+    const [addressLine2, setAddressLine2] = useState('');
     const [city, setCity] = useState('');
     const [postalCode, setPostalCode] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -46,6 +47,7 @@ export const DriverEditModal: React.FC<DriverEditModalProps> = ({
             setEmail(driver.email || '');
             setVehicleNumber(driver.vehicleNumber || '');
             setAddressLine1(driver.addressLine1 || '');
+            setAddressLine2(driver.addressLine2 || '');
             setCity(driver.city || '');
             setPostalCode(driver.postalCode || '');
         }
@@ -64,6 +66,7 @@ export const DriverEditModal: React.FC<DriverEditModalProps> = ({
                 email: email.toLowerCase().trim(),
                 vehicleNumber: vehicleNumber.toUpperCase().trim(),
                 addressLine1: addressLine1.trim(),
+                addressLine2: addressLine2.trim(),
                 city: city.trim(),
                 postalCode: postalCode.trim()
             };
@@ -116,7 +119,7 @@ export const DriverEditModal: React.FC<DriverEditModalProps> = ({
                             <Input
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
-                                className="h-8 text-xs"
+                                className="h-8 text-xs font-mono"
                                 required
                             />
                         </div>
@@ -138,7 +141,7 @@ export const DriverEditModal: React.FC<DriverEditModalProps> = ({
                             <Input
                                 value={vehicleNumber}
                                 onChange={(e) => setVehicleNumber(e.target.value)}
-                                className="h-8 text-xs font-mono"
+                                className="h-8 text-xs font-mono uppercase"
                             />
                         </div>
                         <div className="space-y-1">
@@ -151,13 +154,25 @@ export const DriverEditModal: React.FC<DriverEditModalProps> = ({
                         </div>
                     </div>
 
-                    <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-gray-700">Address Line</Label>
-                        <Input
-                            value={addressLine1}
-                            onChange={(e) => setAddressLine1(e.target.value)}
-                            className="h-8 text-xs"
-                        />
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <Label className="text-xs font-semibold text-gray-700">Address Line 1 (Street / House No)</Label>
+                            <Input
+                                value={addressLine1}
+                                onChange={(e) => setAddressLine1(e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="e.g. No. 45, Juwangahawaththa"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs font-semibold text-gray-700">Address Line 2 (Area / Locality)</Label>
+                            <Input
+                                value={addressLine2}
+                                onChange={(e) => setAddressLine2(e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="e.g. Kithulampitiya"
+                            />
+                        </div>
                     </div>
 
                     <DialogFooter className="border-t pt-3">
